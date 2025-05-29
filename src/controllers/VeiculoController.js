@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export const adicionarVeiculo = async (req, res) => {
     try {
-        const {placa, marca, modelo, ano_fabricacao,cliente_id} = req.body;
+        const {placa, marca, modelo, ano_fabricacao,cliente_id,categoria} = req.body;
         
         const responseModelos = await axios.get(
         `https://parallelum.com.br/fipe/api/v1/carros/marcas/${marca}/modelos/`
@@ -25,7 +25,7 @@ export const adicionarVeiculo = async (req, res) => {
         console.log('Nome da marca:', marcaEncontrada.nome);
 
 
-        const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.nome, modelo:modeloEncontrado.nome, ano_fabricacao,cliente_id});
+        const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.nome, modelo:modeloEncontrado.nome, ano_fabricacao,categoria,cliente_id});
         res.status(201).json(novoVeiculo);
     } catch (error) {
         res.status(400).json({ error: error.message});
