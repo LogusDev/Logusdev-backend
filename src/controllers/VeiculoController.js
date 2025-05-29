@@ -1,9 +1,31 @@
 import Veiculo from '../models/Veiculo.js';
+import axios from 'axios';
 
 export const adicionarVeiculo = async (req, res) => {
     try {
         const {placa, marca, modelo, ano_fabricacao,cliente_id} = req.body;
-        const novoVeiculo = await Veiculo.create({placa, marca, modelo, ano_fabricacao,cliente_id});
+        
+        const responseModelos = await axios.get(
+        `https://parallelum.com.br/fipe/api/v1/carros/marcas/${marca}/modelos/`
+        );
+
+        const modeloEncontrado = responseModelos.data.modelos.find(
+        (m) => m.codigo == modelo
+        );
+
+        console.log('Nome do modelo:', modeloEncontrado.nome);
+
+        const responseMarcas = await axios.get(`https://parallelum.com.br/fipe/api/v1/carros/marcas/`
+        );
+        
+        const marcaEncontrada = responseMarcas.data.find(
+            (m) => m.codigo == marca
+        );
+
+        console.log('Nome da marca:', marcaEncontrada.nome);
+
+
+        const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.nome, modelo:modeloEncontrado.nome, ano_fabricacao,cliente_id});
         res.status(201).json(novoVeiculo);
     } catch (error) {
         res.status(400).json({ error: error.message});
