@@ -2,8 +2,8 @@ import Veiculo from '../models/Veiculo.js';
 
 export const adicionarVeiculo = async (req, res) => {
     try {
-        const {placa, marca, modelo, ano_fabricacao} = req.body;
-        const novoVeiculo = await Veiculo.create({placa, marca, modelo, ano_fabricacao});
+        const {placa, marca, modelo, ano_fabricacao,cliente_id} = req.body;
+        const novoVeiculo = await Veiculo.create({placa, marca, modelo, ano_fabricacao,cliente_id});
         res.status(201).json(novoVeiculo);
     } catch (error) {
         res.status(400).json({ error: error.message});

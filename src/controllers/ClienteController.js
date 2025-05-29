@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const SECRET = process.env.JWT_SECRET
+const SECRET = "teste"
+
 
 export const criarCliente = async (req, res) => {
     try {
