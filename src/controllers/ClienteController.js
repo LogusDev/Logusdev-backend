@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const SECRET = "teste"
-
+                            
 
 export const criarCliente = async (req, res) => {
     try {
@@ -89,6 +89,7 @@ export const deletaCliente = async (req, res) => {
 
 export const loginCliente = async (req, res) => {
     try {
+
         const { email, senha } = req.body;
         
         const cliente = await Cliente.findOne({where: { email }});

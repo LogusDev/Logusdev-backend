@@ -6,26 +6,25 @@ export const adicionarVeiculo = async (req, res) => {
         const {placa, marca, modelo, ano_fabricacao,cliente_id,categoria} = req.body;
         
         const responseModelos = await axios.get(
-        `https://parallelum.com.br/fipe/api/v1/carros/marcas/${marca}/modelos/`
+        `https://fipe.parallelum.com.br/api/v2/cars/brands/${marca}/models`
         );
 
-        const modeloEncontrado = responseModelos.data.modelos.find(
-        (m) => m.codigo == modelo
+        const modeloEncontrado = responseModelos.data.find(
+        (m) => m.code == modelo
         );
 
-        console.log('Nome do modelo:', modeloEncontrado.nome);
+        console.log('Nome do modelo:', modeloEncontrado.name);
 
-        const responseMarcas = await axios.get(`https://parallelum.com.br/fipe/api/v1/carros/marcas/`
+        const responseMarcas = await axios.get(`https://fipe.parallelum.com.br/api/v2/cars/brands/`
         );
         
         const marcaEncontrada = responseMarcas.data.find(
-            (m) => m.codigo == marca
+            (m) => m.code == marca
         );
 
-        console.log('Nome da marca:', marcaEncontrada.nome);
+        console.log('Nome da marca:', marcaEncontrada.name);
 
-
-        const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.nome, modelo:modeloEncontrado.nome, ano_fabricacao,categoria,cliente_id});
+        const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.name, modelo:modeloEncontrado.name, ano_fabricacao,categoria,cliente_id});
         res.status(201).json(novoVeiculo);
     } catch (error) {
         res.status(400).json({ error: error.message});
