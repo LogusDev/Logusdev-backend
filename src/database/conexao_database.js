@@ -10,8 +10,10 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     dialect: "mysql",
-  }
+  },
 
 );
+
+console.log('Usuário:', process.env.DB_USER)
 
 export default sequelize;

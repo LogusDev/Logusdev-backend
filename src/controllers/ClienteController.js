@@ -12,6 +12,21 @@ export const criarCliente = async (req, res) => {
     try {
 
         const { nome, email, senha, cpf, telefone, cnh_num, foto_url } = req.body;
+
+        const emailExists = await Cliente.findOne({where: { email }});
+        const cpfExists = await Cliente.findOne({where: {cpf}});
+
+        if (emailExists) {
+            res.status(409).json({error: "Email já cadastrado!"})
+            return
+        }
+
+        if (cpfExists) {
+            res.status(409).json({error: "CPF já cadastrado!"})
+            return
+        }
+
+
         const senhaHash = await bcrypt.hash(senha, 10);
         const novoCliente = await Cliente.create({ nome, email, senha:senhaHash, cpf, telefone, cnh_num,foto_url });
         const { senha:_, ...clienteSemSenha} = novoCliente.dataValues; 
