@@ -40,11 +40,26 @@ export const buscaVeiculo = async (req, res) => {
     }
 };
 
-export const buscaVeiculoPorId = async (req, res) => {
+export const buscaVeiculoPorIdPk = async (req, res) => {
     try {
         const veiculo = await Veiculo.findByPk(req.params.id);
         if (!veiculo) {
             return res.status(404).json({error: error.message})
+        } else {
+            res.status(200).json(veiculo);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+export const buscaVeiculoPorId = async (req, res) => {
+    try {
+        const clienteId = req.params.id;
+        const veiculo = await Veiculo.findOne({ where: { cliente_id: clienteId } });
+        if (!veiculo) {
+            return res.status(404).json({ error: "Veículo não encontrado" });
         } else {
             res.status(200).json(veiculo);
         }
