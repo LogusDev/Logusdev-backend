@@ -1,20 +1,29 @@
 import request from 'supertest';
 import app from '../app.js';
-import sequelize from '../database/sequelize.js';
 import ClientModel from '../models/Cliente.js'
 
 
-
-beforeEach(async () => {
-    await sequelize.sync({ force:true });
-});
-
-afterAll(async () => {
-    await sequelize.close();
-});
+jest.mock('../models/Cliente.js')
 
 describe("POST /api/clientes", () => {
+
+    beforeEach(() => {
+        jest.clearAllMocks()
+    });
+
     it("Deve criar um cliente com sucesso", async () => {
+        
+        ClientModel.findOne.mockResolvedValue(null);
+
+        ClientModel.create.mockResolvedValue({
+            nome: "Murilo",
+            email: "murilinhoteste@gmail.com",
+            cpf: "19570215782",
+            telefone: "11927486038",
+            cnh_num: "28495042135",
+            foto_url: "https://uk.pinterest.com/pin/lebron-james-watching-everybody-resign-and-get-paid-like-atrain--144326363043208546/"
+        })
+
         const newClient = {
             nome: "Murilo",
             email: "murilinhoteste@gmail.com",
@@ -29,21 +38,14 @@ describe("POST /api/clientes", () => {
 
         expect(res.statusCode).toBe(201);
         expect(res.body).toHaveProperty("id");
-        expect(res.body.email).toBe("murilinhoteste@gmail.com");
-        expect(res.body).not.toHaveProperty("senha");
+        expect(res.body.email).toBe("murilinhoteste@gmail.com")
+        expect(res.body).not.toHaveProperty("senha")
+
     });
 
     it("Deve retornar erro 409 se o email já existir", async () => {
 
-        await request(app).post("/clientes").send({
-            nome: "Murilo",
-            email: "murilinhoteste@gmail.com",
-            cpf: "19570215782",
-            senha: "senhateste123",
-            telefone: "11927486038",
-            cnh_num: "28495042135",
-            foto_url: "https://uk.pinterest.com/pin/lebron-james-watching-everybody-resign-and-get-paid-like-atrain--144326363043208546/"
-        })
+        ClientModel.findOne.mockResolvedValue({ id: 1, email: "murilinhoteste@gmail.com" });
 
         const duplicatedEmail = {
             nome: "Murilo2",
