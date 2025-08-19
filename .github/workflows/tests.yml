@@ -1,0 +1,16 @@
+name: Pipeline para testes com Jest
+on:
+  push:
+   branches: ["tests/clients"]
+   
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalação de Dependencias
+        run: npm i
+
+      - name: Testes
+        run: npm test
