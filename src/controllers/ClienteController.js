@@ -28,6 +28,7 @@ export const criarCliente = async (req, res) => {
 
 
         const senhaHash = await bcrypt.hash(senha, 10);
+
         const novoCliente = await Cliente.create({ nome, email, senha:senhaHash, cpf, telefone, cnh_num,foto_url });
         const { senha:_, ...clienteSemSenha} = novoCliente.dataValues; 
         res.status(201).json(clienteSemSenha);
@@ -79,9 +80,6 @@ export const atualizaCliente = async (req, res) => {
 
         await cliente.update({ nome, email, senha: senhaHash, cpf, telefone, cnh_num });
         res.status(200).json(cliente);
-
-        
-
        
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -112,7 +110,7 @@ export const loginCliente = async (req, res) => {
         if (!email || !senha) return res.status(400).json({error: "Preencha todos os campos!"})
         
         if(!cliente){
-            return res.status(404).json({error:'Credenciais Invalidas!'})
+            return res.status(404).json({error:'Credenciais Inválidas!'})
         }
 
         const comparaSenha = await bcrypt.compare(senha, cliente.senha);
