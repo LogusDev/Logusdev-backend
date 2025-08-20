@@ -5,10 +5,35 @@ import veiculoRoutes from './routers/veiculosRoutes.js';
 import chamadosRoutes from './routers/chamadosRoutes.js';
 import cors from 'cors';
 import { setupSwagger } from '../swagger.js';
+import http from 'http';
+import { Server } from 'socket.io'
 
 
 
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+io.on("connection", (socket) => {
+    console.log("Novo cliente conectado: ", socket.id);
+
+    socket.on("new_ticket", (dadosChamado) => {
+        console.log("Chamado recebido: ", dadosChamado);
+
+        io.emit("ticket_update", dadosChamado);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("Cliente desconectado: ", socket.id)
+    });
+});
+
 const PORT = 3333;
 
 setupSwagger(app);
@@ -25,7 +50,7 @@ app.use('/guincheiros', guincheiroRoutes)
 app.use('/veiculos', veiculoRoutes)
 app.use('/chamados', chamadosRoutes);
 
-app.listen(PORT, (error) => {
+server.listen(PORT, (error) => {
     if (error) {
         console.log("Algo deu errado");
         return
