@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import Sequelize from "../database/conexao_database.js";
+import Sequelize from "../database/sequelize.js";
 
 const Guincheiro = Sequelize.define("guincheiro", {
     id: {
