@@ -1,12 +1,16 @@
 import express from 'express';
-import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado } from '../controllers/ChamadoController.js';
+import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado } from '../controllers/ChamadoController.js';
 
 const router = express.Router();
 
+  // Base: /chamados
 router.post('/', criarChamado);
-router.get('/chamados', listarChamados);
-router.get('/chamados/:id', listaChamadoPorId);
-router.patch('/chamados/:id', atualizarStatusChamado);
-router.delete('/chamados/:id', deletarChamado);
+router.get('/', listarChamados);
+router.get('/:id', listaChamadoPorId);
+router.patch('/:id', atualizarStatusChamado);
+router.delete('/:id', deletarChamado);
+router.get('/:id/status', obterStatusChamado);
+router.post('/:id/aceitar', aceitarChamado);
+router.patch('/:id/cancelar', cancelarChamado);
 
-export default router
+export default router;
