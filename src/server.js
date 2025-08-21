@@ -29,6 +29,11 @@ io.on("connection", (socket) => {
         io.emit("ticket_update", dadosChamado);
     });
 
+    socket.on("ticket_paid", (dadosChamado) => {
+        console.log("Pagamento concluído: ", dadosChamado);
+        io.emit("ticket_update", dadosChamado)
+    })
+
     socket.on("disconnect", () => {
         console.log("Cliente desconectado: ", socket.id)
     });
@@ -43,6 +48,10 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+app.get("/", (req, res) => {
+    res.send("Os gurih estão no ar! 🚀")
+})
 
 app.use(express.json())
 app.use('/clientes', clienteRoutes);
