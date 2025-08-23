@@ -14,5 +14,8 @@ jobs:
       - name: Instalação de Dependencias
         run: npm i
 
+      - name: Instalação do SQLite3
+        run: npm install sqlite3
+
       - name: Testes
         run: npm test
