@@ -1,7 +1,9 @@
 name: Pipeline para testes com Jest
 on:
   push:
-   branches: ["tests/clients"]
+   branches:
+      - tests/users
+      - tests/clients
    
 jobs:
   tests:
