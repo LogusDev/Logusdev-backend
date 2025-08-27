@@ -7,7 +7,7 @@ import { uploadFotoCliente } from '../controllers/uploadController.js';
 
 const router = express.Router();
 
-router.get('/', verifyJWT, buscaCliente);
+router.get('/',  buscaCliente);
 router.get('/:id', buscaClientePorId);
 router.post('/', criarCliente);
 router.put('/:id', atualizaCliente);

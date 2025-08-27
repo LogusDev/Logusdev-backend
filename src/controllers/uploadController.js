@@ -26,7 +26,7 @@
         }
       );
 
-      const fotoUrl = `http://34.151.235.1:9000/users/${objectName}`;
+      const fotoUrl = `http://34.95.142.166:9000/users/${objectName}`;
       console.log('fotoUrl:', fotoUrl);
 
       await Cliente.update(

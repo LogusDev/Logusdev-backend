@@ -1,5 +1,5 @@
 import express from 'express';
-import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado } from '../controllers/ChamadoController.js';
+import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, obterIdGuincheiro } from '../controllers/ChamadoController.js';
 
 const router = express.Router();
 
@@ -9,6 +9,7 @@ router.get('/', listarChamados);
 router.get('/:id', listaChamadoPorId);
 router.patch('/:id', atualizarStatusChamado);
 router.delete('/:id', deletarChamado);
+router.get('/obter/:chamado_id', obterIdGuincheiro);
 router.get('/:id/status', obterStatusChamado);
 router.post('/:id/aceitar', aceitarChamado);
 router.patch('/:id/cancelar', cancelarChamado);

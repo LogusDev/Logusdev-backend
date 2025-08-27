@@ -1,4 +1,5 @@
 import Chamado from "../models/Chamado.js";
+import Guincheiro from "../models/Guincheiro.js";
 
 export const criarChamado = async (req, res) => {
   try {
@@ -131,5 +132,28 @@ export const cancelarChamado = async (req, res) => {
     return res.status(200).json({ ok: true });
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+};
+
+export const obterIdGuincheiro = async (req, res) => {
+  try {
+    const { chamado_id } = req.params;
+    console.log(chamado_id);
+
+    const chamado = await Chamado.findOne({
+      where: { id: chamado_id },
+      include: [{
+        model: Guincheiro,
+        as: 'guincheiro'
+      }]  
+    });
+
+    if (!chamado || !chamado.guincheiro) {
+      return res.status(404).json({ error: 'Guincheiro não encontrado para este chamado' });
+    }
+
+    res.status(200).json({ guincheiro: chamado.guincheiro });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
