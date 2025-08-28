@@ -1,3 +1,4 @@
+import Avaliacao from "../models/Avaliacao.js";
 import Chamado from "../models/Chamado.js";
 import Guincheiro from "../models/Guincheiro.js";
 
@@ -134,6 +135,39 @@ export const cancelarChamado = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const avaliarChamado = async (req, res) => {
+  try {
+    const [id, comentario, chamado_id] = req.body;
+    if (!id || !chamado_id) return res.status(400).json({ error: 'ID e chamado_id são obrigatórios' });
+    
+    const chamado = await Chamado.findByPk(id);
+    if (!chamado) return res.status(404).json({ error: 'Chamado não encontrado' });
+
+    if (chamado.status_chamado !== "concluído") return res.status(400).json({error: "Chamado ainda não foi concluído!"});
+
+     const avaliacaoExiste = await Avaliacao.findOne({
+      where: { chamado_id: id, cliente_id }
+     });
+
+     if (avaliacaoExiste) return res.status(409).json({error: "Chamado já avaliado por este cliente!"});
+
+     const avaliacao = await Avaliacao.create({
+      nota,
+      comentario,
+      chamado_id: id,
+      cliente_id,
+      guincheiro_id: chamado.guincheiro_id,
+      data_avaliacao: new Date()
+     });
+
+     res.status(201).json(avaliacao);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 
 export const obterIdGuincheiro = async (req, res) => {
   try {
