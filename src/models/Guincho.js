@@ -1,8 +1,8 @@
-import { DataTypes } from "sequelize";
-import Sequelize from "../database/conexao_database.js";
+import { DataTypes, Sequelize } from "sequelize";  
+import sequelize from "../database/conexao_database.js"; 
 import Guincheiro from './Guincheiro.js'
 
-const Guincho = Sequelize.define("guincho", {
+const Guincho = sequelize.define("guincho", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -46,7 +46,7 @@ const Guincho = Sequelize.define("guincho", {
 
 Guincheiro.hasOne(Guincho, {
     foreignKey: 'guincheiro_id',
-    as: 'guincheiro'
+    as: 'guincho'
 });
 
 Guincho.belongsTo(Guincheiro, {

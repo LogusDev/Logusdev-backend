@@ -1,10 +1,11 @@
 import { DataTypes } from "sequelize";
 import Sequelize from "../database/conexao_database.js";
+import { sequelize } from 'sequelize'
 import Guincheiro from "./Guincheiro.js";
 import Cliente from "./Cliente.js";
 import Veiculo from "./Veiculo.js";
 
-const Chamado = Sequelize.define("chamado", {
+const Chamado = sequelize.define("chamado", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,

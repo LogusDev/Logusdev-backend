@@ -1,7 +1,8 @@
-import { DataTypes } from "sequelize";
-import Sequelize from "../database/conexao_database.js";
+import { DataTypes, Sequelize } from "sequelize";  
+import sequelize from "../database/conexao_database.js"; 
 
-const Cliente = Sequelize.define("cliente", {
+
+const Cliente = sequelize.define("cliente", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -16,12 +17,17 @@ const Cliente = Sequelize.define("cliente", {
 
     email: {
         type: DataTypes.STRING(70),
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
 
     cpf: {
         type: DataTypes.CHAR(11),
-        allowNull: false
+        allowNull: false,
+        unique: true,
+        validate: {
+            len: [11, 11]  
+        }
     },
 
     senha: {
@@ -31,12 +37,18 @@ const Cliente = Sequelize.define("cliente", {
 
     telefone: {
         type: DataTypes.CHAR(11),
-        allowNull: false
+        allowNull: false,
+        validate: {
+            len: [11, 11] 
+        }
     },
 
     cnh_num: {
         type: DataTypes.CHAR(11),
-        allowNull: false
+        allowNull: false,
+        validate: {
+            len: [11, 11] 
+        }
     },
     foto_url:{
         type: DataTypes.CHAR(255),

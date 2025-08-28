@@ -1,8 +1,8 @@
-import { DataTypes } from "sequelize";
-import Sequelize from "../database/conexao_database.js";
+import { DataTypes, Sequelize } from "sequelize";  
+import sequelize from "../database/conexao_database.js"; 
 import Cliente from "./Cliente.js";
 
-const Lc = Sequelize.define('localizacao_clientes', {
+const Lc = sequelize.define('localizacao_clientes', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
