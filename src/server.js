@@ -23,7 +23,7 @@ app.use(express.json())
 app.use('/clientes', clienteRoutes);
 app.use('/guincheiros', guincheiroRoutes)
 app.use('/veiculos', veiculoRoutes)
-app.use('/chamados', chamadosRoutes);
+app.use('/chamados', chamadosRoutes );
 
 app.listen(PORT, (error) => {
     if (error) {

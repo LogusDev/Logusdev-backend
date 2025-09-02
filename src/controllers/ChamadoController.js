@@ -136,37 +136,62 @@ export const cancelarChamado = async (req, res) => {
   }
 };
 
+// Presume-se que os seus models do Sequelize (Chamado, Avaliacao) estão importados.
+
 export const avaliarChamado = async (req, res) => {
   try {
-    const [id, comentario, chamado_id] = req.body;
-    if (!id || !chamado_id) return res.status(400).json({ error: 'ID e chamado_id são obrigatórios' });
+    // 1. O 'cliente_id' não é mais recebido do frontend.
+    const { comentario, chamado_id, nota } = req.body;
     
-    const chamado = await Chamado.findByPk(id);
-    if (!chamado) return res.status(404).json({ error: 'Chamado não encontrado' });
+    // 2. Validação agora é apenas para os campos que vêm do frontend.
+    if (!chamado_id || !nota) {
+      return res.status(400).json({ error: 'Os campos chamado_id e nota são obrigatórios.' });
+    }
 
-    if (chamado.status_chamado !== "concluído") return res.status(400).json({error: "Chamado ainda não foi concluído!"});
+    // 3. Busca o chamado no banco de dados.
+    const chamado = await Chamado.findByPk(chamado_id);
+    if (!chamado) {
+      return res.status(404).json({ error: 'Chamado não encontrado' });
+    }
 
+    // 4. O 'cliente_id' é obtido diretamente do objeto 'chamado' que veio do banco.
+    // Esta é a fonte segura da informação.
+    const cliente_id = chamado.cliente_id;
+
+    if (chamado.status_chamado !== "concluido") {
+      return res.status(400).json({ error: "Este chamado ainda não foi concluído!" });
+    }
+
+     // 5. A verificação usa o 'cliente_id' seguro, obtido do próprio chamado.
      const avaliacaoExiste = await Avaliacao.findOne({
-      where: { chamado_id: id, cliente_id }
+      where: { 
+        chamado_id: chamado_id, 
+        cliente_id: cliente_id 
+      }
      });
 
-     if (avaliacaoExiste) return res.status(409).json({error: "Chamado já avaliado por este cliente!"});
+     if (avaliacaoExiste) {
+       return res.status(409).json({ error: "Você já avaliou este chamado!" });
+     }
 
-     const avaliacao = await Avaliacao.create({
+     // 6. A nova avaliação é criada com o 'cliente_id' seguro.
+     const novaAvaliacao = await Avaliacao.create({
       nota,
       comentario,
-      chamado_id: id,
-      cliente_id,
+      chamado_id: chamado_id,
+      cliente_id: cliente_id, 
       guincheiro_id: chamado.guincheiro_id,
       data_avaliacao: new Date()
      });
 
-     res.status(201).json(avaliacao);
+     res.status(201).json(novaAvaliacao);
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Erro ao avaliar chamado:', error);
+    res.status(500).json({ error: 'Ocorreu um erro interno no servidor.' });
   }
 }
+
 
 
 export const obterIdGuincheiro = async (req, res) => {

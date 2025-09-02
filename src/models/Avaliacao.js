@@ -4,7 +4,7 @@ import Cliente from "./Cliente.js";
 import Chamado from "./Chamado.js";
 import Guincheiro from "./Guincheiro.js";
 
-const Avaliacao = sequelize.define("avaliacao", {
+const Avaliacao = sequelize.define("avaliacoes", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -31,7 +31,11 @@ const Avaliacao = sequelize.define("avaliacao", {
         allowNull: true,
         defaultValue: Sequelize.NOW
     }
-});
+},
+    {
+        tableName:'avaliacoes',
+        timestamps:false
+    });
 
 Avaliacao.belongsTo(Guincheiro, {
     foreignKey: 'guincheiro_id',
