@@ -2,6 +2,10 @@ import Cliente from '../models/Cliente.js';
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt';
 import dotenv from "dotenv";    
+import generateNewPassword from '../utils/mailer.js';
+import nodemailer from 'nodemailer';
+import fs from 'fs'
+import path from 'path';
 
 dotenv.config();
 
@@ -140,3 +144,50 @@ export const loginCliente = async (req, res) => {
         res.status(500).json({error: error.message})
     }
 }
+
+export const resetSenhaCliente = async (req, res) => {
+    try {
+        const {email} = req.body;
+        const cliente =await Cliente.findOne({where: {email}});
+
+        if (!cliente) {
+            return res.status(400).json({erro: "Email inválido"});
+        }
+
+        const newPassword = generateNewPassword();
+        const hashPassword = await bcrypt.hash(newPassword, 10);
+
+        await Cliente.update({senha: hashPassword}, {where: {email}});
+
+        const filePath = path.resolve("src/content/resetSenha.html");
+        let htmlBody = fs.readFileSync(filePath, "utf8");
+        htmlBody = htmlBody.replace("{{SENHA}}", newPassword);
+        console.log(htmlBody)
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+
+        await transporter.sendMail({
+            from: `"App GuinchAqui" <${process.env.SMTP_USER}>`,
+            to: email,
+            subject: "Redefinição de Senha",
+            text: `Sua nova senha é: ${newPassword}`,
+            html: htmlBody
+        });
+
+        res.status(200).json({
+            mensagem: "Nova Senha enviada com sucesso!"
+        })
+
+    } catch (error) {
+        res.status(400).json({
+            erro: "Erro ao redefinir senha",
+            detalhe: error.message
+        });
+    }
+};
