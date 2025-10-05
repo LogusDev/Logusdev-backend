@@ -66,6 +66,8 @@ export const loginGuincheiro = async (req, res) => {
         const { email, senha } = req.body;
         const guincheiro = await Guincheiro.findOne({where: { email }});
 
+        console.log(email,senha)
+
         if (!email || !senha) {
             return res.status(400).json({error: "Preencha todos os campos!"})
         }

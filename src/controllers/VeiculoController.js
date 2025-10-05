@@ -26,6 +26,7 @@ export const adicionarVeiculo = async (req, res) => {
 
         const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.name, modelo:modeloEncontrado.name, ano_fabricacao,categoria,cliente_id});
         res.status(201).json(novoVeiculo);
+        console.log(novoVeiculo.categoria);
     } catch (error) {
         res.status(400).json({ error: error.message});
     }
@@ -43,6 +44,7 @@ export const buscaVeiculo = async (req, res) => {
 export const buscaVeiculoPorIdPk = async (req, res) => {
     try {
         const veiculo = await Veiculo.findByPk(req.params.id);
+
         if (!veiculo) {
             return res.status(404).json({error: error.message})
         } else {

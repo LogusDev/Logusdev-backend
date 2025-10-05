@@ -1,4 +1,4 @@
-import { DataTypes, Sequelize } from "sequelize";  
+import { DataTypes, ENUM, Sequelize } from "sequelize";  
 import sequelize from "../database/conexao_database.js"; 
 import Cliente from "./Cliente.js";
 
@@ -28,6 +28,10 @@ const Veiculo = sequelize.define("veiculo", {
     ano_fabricacao: {
         type: DataTypes.INTEGER,
         allowNull: false
+    },
+    categoria:{
+        type:ENUM("sedan","suv","hatch","picape"),
+        allowNull:false
     }
 }, {
     timestamps: false 
