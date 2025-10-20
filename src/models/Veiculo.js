@@ -32,7 +32,13 @@ const Veiculo = sequelize.define("veiculo", {
     categoria:{
         type:ENUM("sedan","suv","hatch","picape"),
         allowNull:false
-    }
+    },
+
+    // cor: {
+    //     type: DataTypes.STRING(15),
+    //     allowNull: true
+    // }
+
 }, {
     timestamps: false 
 });

@@ -3,7 +3,8 @@ import axios from 'axios';
 
 export const adicionarVeiculo = async (req, res) => {
     try {
-        const {placa, marca, modelo, ano_fabricacao,cliente_id,categoria} = req.body;
+        const {placa, marca, modelo, ano_fabricacao, categoria} = req.body;
+        const cliente_id = req.userId
         
         const responseModelos = await axios.get(
         `https://fipe.parallelum.com.br/api/v2/cars/brands/${marca}/models`
@@ -24,7 +25,13 @@ export const adicionarVeiculo = async (req, res) => {
 
         console.log('Nome da marca:', marcaEncontrada.name);
 
-        const novoVeiculo = await Veiculo.create({placa, marca:marcaEncontrada.name, modelo:modeloEncontrado.name, ano_fabricacao,categoria,cliente_id});
+        const novoVeiculo = await Veiculo.create({
+            placa, marca:marcaEncontrada.name,
+            modelo:modeloEncontrado.name,
+            ano_fabricacao,
+            categoria,
+            cliente_id});
+            
         res.status(201).json(novoVeiculo);
         console.log(novoVeiculo.categoria);
     } catch (error) {
@@ -34,7 +41,7 @@ export const adicionarVeiculo = async (req, res) => {
 
 export const buscaVeiculo = async (req, res) => {
     try {
-        const veiculos = await Veiculo.findAll();
+        const veiculos = await Veiculo.findAll({where: { cliente_id: req.userId }});
         res.status(200).json(veiculos);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -58,8 +65,7 @@ export const buscaVeiculoPorIdPk = async (req, res) => {
 
 export const buscaVeiculoPorId = async (req, res) => {
     try {
-        const clienteId = req.params.id;
-        const veiculo = await Veiculo.findOne({ where: { cliente_id: clienteId } });
+        const veiculo = await Veiculo.findAll({ where: { cliente_id: req.userId } });
         if (!veiculo) {
             return res.status(404).json({ error: "Veículo não encontrado" });
         } else {
@@ -76,7 +82,7 @@ export const deletaVeiculo = async (req, res) => {
         if (!veiculo) {
             res.status(400).json({ error: error.message })
         } else {
-            await Veiculo.destroy();
+            await Veiculo.destroy({where: { id: req.params.id}});
             res.status(204).send();
         }
     } catch (error) {
