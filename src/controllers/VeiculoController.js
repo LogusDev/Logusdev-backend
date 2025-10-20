@@ -31,7 +31,7 @@ export const adicionarVeiculo = async (req, res) => {
             ano_fabricacao,
             categoria,
             cliente_id});
-            
+
         res.status(201).json(novoVeiculo);
         console.log(novoVeiculo.categoria);
     } catch (error) {
@@ -75,6 +75,30 @@ export const buscaVeiculoPorId = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const atualizaVeiculo = async (req, res) => {
+    try {
+        const { placa, marca, modelo, ano_fabricacao, categoria} = req.body;
+        const { id } = req.params;
+
+        const veiculo = await Veiculo.findByPk(id);
+
+        if (!veiculo) return res.status(404).json({error: "Veículo não encontrado"});
+
+        veiculo.placa = placa || veiculo.placa;
+        veiculo.marca = marca || veiculo.marca;
+        veiculo.modelo = modelo || veiculo.modelo;
+        veiculo.ano_fabricacao = ano_fabricacao || veiculo.ano_fabricacao;
+        veiculo.categoria = categoria || veiculo.categoria;
+
+        await veiculo.save();
+
+        res.status(200).json(veiculo);
+
+    } catch (error) {
+        res.status(500).json({error: error.message})
+    }
+}
 
 export const deletaVeiculo = async (req, res) => {
     try {
