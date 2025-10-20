@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export const adicionarVeiculo = async (req, res) => {
     try {
-        const {placa, marca, modelo, ano_fabricacao, categoria} = req.body;
+        const {placa, marca, modelo, ano_fabricacao, categoria, cor} = req.body;
         const cliente_id = req.userId
         
         const responseModelos = await axios.get(
@@ -26,7 +26,9 @@ export const adicionarVeiculo = async (req, res) => {
         console.log('Nome da marca:', marcaEncontrada.name);
 
         const novoVeiculo = await Veiculo.create({
-            placa, marca:marcaEncontrada.name,
+            placa, 
+            marca:marcaEncontrada.name,
+            cor,
             modelo:modeloEncontrado.name,
             ano_fabricacao,
             categoria,
@@ -78,7 +80,7 @@ export const buscaVeiculoPorId = async (req, res) => {
 
 export const atualizaVeiculo = async (req, res) => {
     try {
-        const { placa, marca, modelo, ano_fabricacao, categoria} = req.body;
+        const { placa, marca, modelo, ano_fabricacao, categoria, cor} = req.body;
         const { id } = req.params;
 
         const veiculo = await Veiculo.findByPk(id);
@@ -86,6 +88,7 @@ export const atualizaVeiculo = async (req, res) => {
         if (!veiculo) return res.status(404).json({error: "Veículo não encontrado"});
 
         veiculo.placa = placa || veiculo.placa;
+        veiculo.cor = cor || veiculo.cor;
         veiculo.marca = marca || veiculo.marca;
         veiculo.modelo = modelo || veiculo.modelo;
         veiculo.ano_fabricacao = ano_fabricacao || veiculo.ano_fabricacao;

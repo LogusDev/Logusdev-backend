@@ -121,7 +121,7 @@ export const loginCliente = async (req, res) => {
         }
 
 
-        const token = jwt.sign({userId: cliente.id}, SECRET, { expiresIn: '1h' } )
+        const token = jwt.sign({userId: cliente.id}, SECRET, { expiresIn: '1d' } )
         return res.json({
             auth: true,
             token,
