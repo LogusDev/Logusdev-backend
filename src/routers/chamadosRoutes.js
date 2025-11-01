@@ -1,5 +1,6 @@
 import express from 'express';
-import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, obterIdGuincheiro, avaliarChamado } from '../controllers/ChamadoController.js';
+import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, obterIdGuincheiro, avaliarChamado, listarChamadosPorCliente } from '../controllers/ChamadoController.js';
+import verifyJWT from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.get('/:id/status', obterStatusChamado);
 router.post('/:id/aceitar', aceitarChamado);
 router.patch('/:id/cancelar', cancelarChamado);
 router.post('/avaliar', avaliarChamado);
+router.get('/cliente/meus', verifyJWT, listarChamadosPorCliente);
 
 export default router;

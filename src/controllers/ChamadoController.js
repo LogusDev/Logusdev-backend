@@ -1,5 +1,6 @@
 import Avaliacao from "../models/Avaliacao.js";
 import Chamado from "../models/Chamado.js";
+import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
 
 export const criarChamado = async (req, res) => {
@@ -18,7 +19,7 @@ export const criarChamado = async (req, res) => {
       descricao,
       carro_id,
       cliente_id,
-      status_chamado: 'aguardando',     // default seguro
+      status_chamado: 'aguardando', 
       requisitado_em: new Date(),
       guincheiro_id: null,
     });
@@ -47,7 +48,33 @@ export const listaChamadoPorId = async (req, res) => {
         res.status(200).json(chamado);
     } catch (error) {
         res.status(500).json({ error: error.message })
-    }
+    }   
+};
+
+export const listarChamadosPorCliente = async (req, res) => {
+  try {
+    const clienteId = req.userId;
+
+    const chamados = await Chamado.findAll({
+      where: { cliente_id: clienteId },
+      order: [['requisitado_em', 'DESC']],
+      include: [ //Join para pegar o nome do guincheiro (Se precisar, do cliente também) 
+        {
+          model: Guincheiro,
+          as: 'guincheiro',
+          attributes: ['id', 'nome', 'foto_url']
+        },
+        {
+          model: Cliente,
+          as: 'cliente',
+          attributes: ['id', 'nome', 'foto_url']
+        },
+      ],
+    });
+    res.status(200).json(chamados)
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 export const atualizarStatusChamado = async (req, res) => {
