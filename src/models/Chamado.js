@@ -32,8 +32,18 @@ const Chamado = Sequelize.define("chamado", {
         allowNull: false,
     },
 
+    endereco_inicial: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
+
+    endereco_final: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
+
     status_chamado: {
-        type: DataTypes.ENUM("aguardando", "em andamento", "cancelado", "concluído"),
+        type: DataTypes.ENUM("aguardando", "em andamento", "cancelado", "concluido"),
         allowNull: false
     },
 
