@@ -1,6 +1,7 @@
 import Avaliacao from "../models/Avaliacao.js";
 import Chamado from "../models/Chamado.js";
 import Cliente from "../models/Cliente.js";
+import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
 import getAddressFromCoords from "../services/geocode.js";
 import { Op } from "sequelize";
@@ -334,49 +335,4 @@ export const detalheChamados = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message })
     }
-};
-
-
-export const atualizarEnderecosChamadosExistentes = async (req, res) => {
-  const cliente_id = req.userId;
-  console.log("== Atualizando endereços do cliente:", cliente_id);
-
-  try {
-    const chamados = await Chamado.findAll({
-      where: {
-        cliente_id,
-        [Op.or]: [
-          { endereco_inicial: null },
-          { endereco_final: null },
-        ],
-      },
-    });
-
-    for (const chamado of chamados) {
-      const endereco_inicial = chamado.endereco_inicial
-        ? chamado.endereco_inicial
-        : await getAddressFromCoords(chamado.latitude_inicial, chamado.longitude_inicial);
-
-      const endereco_final = chamado.endereco_final
-        ? chamado.endereco_final
-        : await getAddressFromCoords(chamado.latitude_final, chamado.longitude_final);
-
-      chamado.endereco_inicial = endereco_inicial;
-      chamado.endereco_final = endereco_final;
-
-      await chamado.save();
-
-      console.log(`Chamado ${chamado.id} atualizado:`);
-      console.log(` → Inicial: ${endereco_inicial}`);
-      console.log(` → Final: ${endereco_final}`);
-    }
-
-    res.status(200).json({
-      message: "Endereços atualizados com sucesso!",
-      total: chamados.length,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
 };
