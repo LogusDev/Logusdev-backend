@@ -1,5 +1,5 @@
 import express from 'express';
-import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, obterIdGuincheiro, avaliarChamado, obterChamadosEmAndamento, detalheChamados } from '../controllers/ChamadoController.js';
+import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, obterIdGuincheiro, avaliarChamado,listarChamadosPorCliente, atualizarEnderecosChamadosExistentes } from '../controllers/ChamadoController.js';
 
 const router = express.Router();
 
@@ -14,9 +14,9 @@ router.post('/avaliar', avaliarChamado);
 router.get('/:id/status', obterStatusChamado);
 router.post('/:id/aceitar', aceitarChamado);
 router.patch('/:id/cancelar', cancelarChamado);
-router.patch('/:id', atualizarStatusChamado);
-router.delete('/:id', deletarChamado);
+router.post('/avaliar', avaliarChamado);
 
-router.get('/:id', listaChamadoPorId);
+router.get('/cliente/meus', verifyJWT, listarChamadosPorCliente);
+router.put('/atualizar-enderecos', verifyJWT, atualizarEnderecosChamadosExistentes);
 
 export default router;

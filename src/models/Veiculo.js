@@ -11,7 +11,7 @@ const Veiculo = sequelize.define("veiculo", {
     },
 
     placa: {
-        type: DataTypes.CHAR(7),
+        type: DataTypes.CHAR(8),
         allowNull: false
     },
 
@@ -34,10 +34,10 @@ const Veiculo = sequelize.define("veiculo", {
         allowNull:false
     },
 
-    // cor: {
-    //     type: DataTypes.STRING(15),
-    //     allowNull: true
-    // }
+    cor: {
+        type: DataTypes.STRING(15),
+        allowNull: true
+    }
 
 }, {
     timestamps: false 

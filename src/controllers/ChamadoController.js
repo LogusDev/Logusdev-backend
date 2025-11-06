@@ -2,6 +2,8 @@ import Avaliacao from "../models/Avaliacao.js";
 import Chamado from "../models/Chamado.js";
 import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
+import getAddressFromCoords from "../services/geocode.js";
+import { Op } from "sequelize";
 
 export const criarChamado = async (req, res) => {
   try {
@@ -11,15 +13,20 @@ export const criarChamado = async (req, res) => {
       descricao, carro_id, cliente_id
     } = req.body;
 
+    const endereco_inicial = await getAddressFromCoords(latitude_inicial, longitude_inicial);
+    const endereco_final = await getAddressFromCoords(latitude_final, longitude_final);
+
     const chamado = await Chamado.create({
       latitude_inicial,
       longitude_inicial,
       latitude_final,
       longitude_final,
+      endereco_inicial,
+      endereco_final,
       descricao,
       carro_id,
       cliente_id,
-      status_chamado: 'aguardando',     // default seguro
+      status_chamado: 'aguardando', 
       requisitado_em: new Date(),
       guincheiro_id: null,
     });
@@ -48,7 +55,45 @@ export const listaChamadoPorId = async (req, res) => {
         res.status(200).json(chamado);
     } catch (error) {
         res.status(500).json({ error: error.message })
-    }
+    }   
+};
+
+export const listarChamadosPorCliente = async (req, res) => {
+  try {
+    const clienteId = req.userId;
+    console.log("ID do cliente autenticado:", clienteId);
+
+    const chamados = await Chamado.findAll({
+      where: { cliente_id: clienteId },
+      order: [['requisitado_em', 'DESC']],
+      include: [ //Join para pegar o nome do guincheiro (Se precisar, do cliente também) 
+        {
+          model: Guincheiro,
+          as: 'guincheiro',
+          attributes: ['id', 'nome', 'foto_url']
+        },
+        {
+          model: Cliente,
+          as: 'cliente',
+          attributes: ['id', 'nome', 'foto_url']
+        },
+      ],
+      attributes: [
+        'id',
+        'latitude_inicial',
+        'longitude_inicial',
+        'latitude_final',
+        'longitude_final',
+        'endereco_inicial',
+        'endereco_final',
+        'requisitado_em',
+        'completado_em'
+      ]
+    });
+    res.status(200).json(chamados)
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 export const atualizarStatusChamado = async (req, res) => {
@@ -59,7 +104,7 @@ export const atualizarStatusChamado = async (req, res) => {
         }
         const { status_chamado } = req.body;
         chamado.status_chamado = status_chamado;
-        if (status_chamado === 'concluído') {
+        if (status_chamado === 'concluido') {
             chamado.completado_em = new Date();
         }
 
@@ -207,7 +252,7 @@ export const obterIdGuincheiro = async (req, res) => {
       return res.status(404).json({ error: 'Guincheiro não encontrado para este chamado' });
     }
 
-    res.status(200).json({ guincheiro: chamado.guincheiro });
+    res.status(200).json({ guincheiro_id: chamado.guincheiro.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -289,4 +334,49 @@ export const detalheChamados = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message })
     }
+};
+
+
+export const atualizarEnderecosChamadosExistentes = async (req, res) => {
+  const cliente_id = req.userId;
+  console.log("== Atualizando endereços do cliente:", cliente_id);
+
+  try {
+    const chamados = await Chamado.findAll({
+      where: {
+        cliente_id,
+        [Op.or]: [
+          { endereco_inicial: null },
+          { endereco_final: null },
+        ],
+      },
+    });
+
+    for (const chamado of chamados) {
+      const endereco_inicial = chamado.endereco_inicial
+        ? chamado.endereco_inicial
+        : await getAddressFromCoords(chamado.latitude_inicial, chamado.longitude_inicial);
+
+      const endereco_final = chamado.endereco_final
+        ? chamado.endereco_final
+        : await getAddressFromCoords(chamado.latitude_final, chamado.longitude_final);
+
+      chamado.endereco_inicial = endereco_inicial;
+      chamado.endereco_final = endereco_final;
+
+      await chamado.save();
+
+      console.log(`Chamado ${chamado.id} atualizado:`);
+      console.log(` → Inicial: ${endereco_inicial}`);
+      console.log(` → Final: ${endereco_final}`);
+    }
+
+    res.status(200).json({
+      message: "Endereços atualizados com sucesso!",
+      total: chamados.length,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
 };
