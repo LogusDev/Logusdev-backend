@@ -4,7 +4,7 @@ import verifyJWT from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', verifyJWT, buscaVeiculo);
+router.get('/', buscaVeiculo);
 router.get('/:id', verifyJWT, buscaVeiculoPorId);
 router.post('/', verifyJWT, adicionarVeiculo);
 router.put('/:id', verifyJWT, atualizaVeiculo)
