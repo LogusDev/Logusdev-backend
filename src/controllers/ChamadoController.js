@@ -1,5 +1,6 @@
 import Avaliacao from "../models/Avaliacao.js";
 import Chamado from "../models/Chamado.js";
+import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
 
 export const criarChamado = async (req, res) => {
@@ -136,33 +137,29 @@ export const cancelarChamado = async (req, res) => {
   }
 };
 
-// Presume-se que os seus models do Sequelize (Chamado, Avaliacao) estão importados.
+
 
 export const avaliarChamado = async (req, res) => {
   try {
-    // 1. O 'cliente_id' não é mais recebido do frontend.
     const { comentario, chamado_id, nota } = req.body;
     
-    // 2. Validação agora é apenas para os campos que vêm do frontend.
     if (!chamado_id || !nota) {
       return res.status(400).json({ error: 'Os campos chamado_id e nota são obrigatórios.' });
     }
 
-    // 3. Busca o chamado no banco de dados.
     const chamado = await Chamado.findByPk(chamado_id);
     if (!chamado) {
       return res.status(404).json({ error: 'Chamado não encontrado' });
     }
 
-    // 4. O 'cliente_id' é obtido diretamente do objeto 'chamado' que veio do banco.
-    // Esta é a fonte segura da informação.
+
     const cliente_id = chamado.cliente_id;
 
     if (chamado.status_chamado !== "concluido") {
       return res.status(400).json({ error: "Este chamado ainda não foi concluído!" });
     }
 
-     // 5. A verificação usa o 'cliente_id' seguro, obtido do próprio chamado.
+
      const avaliacaoExiste = await Avaliacao.findOne({
       where: { 
         chamado_id: chamado_id, 
@@ -174,7 +171,6 @@ export const avaliarChamado = async (req, res) => {
        return res.status(409).json({ error: "Você já avaliou este chamado!" });
      }
 
-     // 6. A nova avaliação é criada com o 'cliente_id' seguro.
      const novaAvaliacao = await Avaliacao.create({
       nota,
       comentario,
@@ -215,4 +211,82 @@ export const obterIdGuincheiro = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+export const obterChamadosEmAndamento = async (req, res) => {
+  try {
+    const chamados = await Chamado.findAll({
+      where: { status_chamado: 'em andamento' },
+      include: [{ model: Cliente, as: 'cliente', attributes: ['id', 'nome'] }],
+      order: [['requisitado_em', 'ASC']]
+    });
+
+    const now = Date.now();
+
+    const formatDuration = (minutes) => {
+      if (minutes < 1) return '<1min';
+      const hrs = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      if (hrs === 0) return `${mins}min`;
+      if (mins === 0) return `${hrs}h`;
+      return `${hrs}h ${mins}min`;
+    };
+
+    const resultado = chamados.map(c => {
+      const requisitado = new Date(c.requisitado_em).getTime();
+      const minutosEspera = Math.max(0, Math.floor((now - requisitado) / 60000));
+      return {
+        id: c.id,
+        cliente_nome: c.cliente?.nome ?? null,
+        minutos_espera: minutosEspera,
+        tempo_espera_formatado: formatDuration(minutosEspera),
+        requisitado_em: c.requisitado_em,
+        descricao: c.descricao,
+        latitude_inicial: c.latitude_inicial,
+        longitude_inicial: c.longitude_inicial
+      };
+    });
+
+    return res.status(200).json(resultado);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const detalheChamados = async (req, res) => {
+    try {
+
+        const chamado = await Chamado.findByPk(req.params.id, {
+          include: [
+            { model: Cliente, as: 'cliente', include: [{ model: Veiculo, as: 'veiculo' }] },
+          ]
+        });
+        if (!chamado) {
+            return res.status(404).json({error: "Chamado não encontrado!"})
+        }
+
+        const detalhe = {
+          id: chamado.id,
+          descricao: chamado.descricao,
+          requisitado_em: chamado.requisitado_em,
+          carro: chamado.cliente?.veiculo,
+          valor: chamado.valor,
+          metodo_pagamento: chamado.metodo_pagamento,
+          endereco_inicio: chamado.endereco_inicial,
+          endereco_destino: chamado.endereco_final,
+          coordenadas_inicio: {
+            latitude: chamado.latitude_inicial,
+            longitude: chamado.longitude_inicial
+          },
+          coordenadas_destino: {
+            latitude: chamado.latitude_final,
+            longitude: chamado.longitude_final
+          }
+        };
+
+        res.status(200).json(detalhe);
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
 };
