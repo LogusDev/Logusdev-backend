@@ -2,6 +2,8 @@ import Avaliacao from "../models/Avaliacao.js";
 import Chamado from "../models/Chamado.js";
 import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
+import Guincho from "../models/Guincho.js";
+import Veiculo from "../models/Veiculo.js";
 import getAddressFromCoords from "../services/geocode.js";
 import { Op } from "sequelize";
 
@@ -10,7 +12,7 @@ export const criarChamado = async (req, res) => {
     const {
       latitude_inicial, longitude_inicial,
       latitude_final, longitude_final,
-      descricao, carro_id, cliente_id
+      descricao, carro_id, cliente_id, guincho_id
     } = req.body;
 
     const endereco_inicial = await getAddressFromCoords(latitude_inicial, longitude_inicial);
@@ -26,6 +28,7 @@ export const criarChamado = async (req, res) => {
       descricao,
       carro_id,
       cliente_id,
+      guincho_id,
       status_chamado: 'aguardando', 
       requisitado_em: new Date(),
       guincheiro_id: null,
@@ -48,7 +51,33 @@ export const listarChamados = async (req, res) => {
 
 export const listaChamadoPorId = async (req, res) => {
     try {
-        const chamado = await Chamado.findByPk(req.params.id);
+        const chamado = await Chamado.findByPk(req.params.id, {
+          include: [
+            {
+              model: Guincheiro,
+              as : 'guincheiro',
+              attributes: ['id', 'nome', 'telefone', 'email', 'foto_url']
+            },
+
+            {
+              model: Guincho,
+              as : 'guincho',
+              attributes: ['id', 'placa', 'marca', 'modelo', 'ano_fabricacao', 'guincheiro_id', 'capacidade', 'comprimento_plataforma']
+            },
+
+            {
+              model: Cliente,
+              as : 'cliente',
+              attributes: ['id', 'nome', 'telefone', 'email', 'foto_url']
+            },
+
+            {
+              model: Veiculo,
+              as : 'veiculo',
+              attributes: ['id', 'marca', 'modelo', 'ano_fabricacao', 'placa', 'cor']
+            }
+          ]
+        });
         if (!chamado) {
             return res.status(404).json({error: "Chamado não encontrado!"})
         }
@@ -77,6 +106,7 @@ export const listarChamadosPorCliente = async (req, res) => {
           as: 'cliente',
           attributes: ['id', 'nome', 'foto_url']
         },
+
       ],
       attributes: [
         'id',

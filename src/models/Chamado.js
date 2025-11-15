@@ -3,6 +3,7 @@ import Sequelize from "../database/conexao_database.js";
 import Guincheiro from "./Guincheiro.js";
 import Cliente from "./Cliente.js";
 import Veiculo from "./Veiculo.js";
+import Guincho from "./Guincho.js";
 
 const Chamado = Sequelize.define("chamado", {
     id: {
@@ -74,6 +75,11 @@ const Chamado = Sequelize.define("chamado", {
         allowNull: true
     },
 
+    guincho_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+    },
+
     cliente_id: {
         type: DataTypes.INTEGER,
         allowNull: true
@@ -101,6 +107,11 @@ Chamado.belongsTo(Guincheiro, {
 Chamado.belongsTo(Cliente, {
     foreignKey: 'cliente_id',
     as: 'cliente'
+});
+
+Chamado.belongsTo(Guincho, {
+    foreignKey: 'guincho_id',
+    as: 'guincho'
 });
 
 
