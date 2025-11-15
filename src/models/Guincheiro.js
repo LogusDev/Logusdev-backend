@@ -42,6 +42,11 @@ const Guincheiro = sequelize.define("guincheiro", {
         }
     },
 
+    foto_url:{
+        type: DataTypes.STRING(255),
+        allowNull: true
+    }, 
+
     cnh_num: {
         type: DataTypes.CHAR(11),
         allowNull: false,

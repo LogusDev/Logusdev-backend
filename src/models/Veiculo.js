@@ -44,9 +44,9 @@ const Veiculo = sequelize.define("veiculo", {
 });
 
 
-Cliente.hasOne(Veiculo, {
+Cliente.hasMany(Veiculo, {
     foreignKey: "cliente_id",
-    as: "veiculo"
+    as: "veiculos"
 });
 
 Veiculo.belongsTo(Cliente, {
