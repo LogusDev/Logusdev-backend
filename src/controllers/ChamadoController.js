@@ -3,10 +3,12 @@ import Chamado from "../models/Chamado.js";
 import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
 import Veiculo from "../models/Veiculo.js";
+import Guincho from "../models/Guincho.js";
 import getAddressFromCoords from "../services/geocode.js";
 import { Op } from "sequelize";
 import { calculateFareSimple } from "../helpers/value.js";
 import { calcularDistancia } from "../helpers/geoloc.js";
+import { Sequelize } from "sequelize";  
 
 export const criarChamado = async (req, res) => {
   try {
@@ -275,31 +277,72 @@ export const obterIdGuincheiro = async (req, res) => {
     const { chamado_id } = req.params;
     console.log(chamado_id);
 
+    // --- 1. Busca principal com include aninhado ---
     const chamado = await Chamado.findOne({
       where: { id: chamado_id },
       include: [{
         model: Guincheiro,
-        as: 'guincheiro',
-        attributes: ['id', 'nome', 'telefone', 'foto_url', 'email']
-      }]  
+        as: 'guincheiro', // O guincheiro associado ao chamado
+        attributes: ['id', 'nome', 'telefone', 'foto_url', 'email'],
+        include: { // <-- Include aninhado
+          model: Guincho,
+          as: 'guincho', // O guincho associado ao guincheiro
+          attributes: ['placa', 'marca', 'modelo', 'ano_fabricacao']
+        }
+      }]
     });
 
     if (!chamado || !chamado.guincheiro) {
       return res.status(404).json({ error: 'Guincheiro não encontrado para este chamado' });
     }
 
-    // Retorna os dados completos do guincheiro
-    res.status(200).json({ 
-      guincheiro_id: chamado.guincheiro.id,
+    const guincheiro_id = chamado.guincheiro.id;
+
+    // --- 2. Busca de estatísticas em paralelo ---
+    const [
+      statsAvaliacao,
+      totalChamadosConcluidos
+    ] = await Promise.all([
+      // Query 1: Calcular a Média de Avaliações
+      Avaliacao.findOne({
+        attributes: [
+          [Sequelize.fn('AVG', Sequelize.col('nota')), 'mediaGeral']
+        ],
+        where: { guincheiro_id },
+        raw: true
+      }),
+      // Query 2: Contar total de chamados concluídos
+      Chamado.count({
+        where: {
+          guincheiro_id,
+          status_chamado: 'concluido'
+        }
+      })
+    ]);
+
+    // --- 3. Montar e Enviar a Resposta ---
+
+    // Formata a média (igual fizemos antes)
+    const mediaFormatada = statsAvaliacao.mediaGeral
+      ? Number(parseFloat(statsAvaliacao.mediaGeral).toFixed(1))
+      : 0;
+
+    // Converte o guincheiro (que é um objeto Sequelize) para JSON
+    // Isso já inclui o objeto 'guincho' aninhado que buscamos no passo 1
+    const guincheiroData = chamado.guincheiro.toJSON();
+
+    // Resposta final
+    res.status(200).json({
+      guincheiro_id: guincheiroData.id,
       guincheiro: {
-        id: chamado.guincheiro.id,
-        nome: chamado.guincheiro.nome,
-        telefone: chamado.guincheiro.telefone,
-        foto_url: chamado.guincheiro.foto_url,
-        email: chamado.guincheiro.email
+        ...guincheiroData, // Inclui id, nome, tel, foto, email E o 'guincho'
+        media_avaliacoes: mediaFormatada, // Adiciona a média
+        total_chamados_atendidos: totalChamadosConcluidos // Adiciona o total
       }
     });
+
   } catch (error) {
+    console.error("Erro ao obter dados do guincheiro:", error);
     res.status(500).json({ error: error.message });
   }
 };
