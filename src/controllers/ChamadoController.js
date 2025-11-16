@@ -16,21 +16,38 @@ export const criarChamado = async (req, res) => {
       descricao, carro_id, cliente_id,metodo_pagamento
     } = req.body;
 
-    const endereco_inicial = await getAddressFromCoords(latitude_inicial, longitude_inicial);
-    const endereco_final = await getAddressFromCoords(latitude_final, longitude_final);
+    // Converter coordenadas para números (caso venham como strings)
+    const latInicial = parseFloat(latitude_inicial);
+    const lngInicial = parseFloat(longitude_inicial);
+    const latFinal = parseFloat(latitude_final);
+    const lngFinal = parseFloat(longitude_final);
+
+    console.log("📍 Coordenadas recebidas:", {
+      inicial: { lat: latInicial, lng: lngInicial },
+      final: { lat: latFinal, lng: lngFinal }
+    });
+
+    // Converter coordenadas para endereços
+    console.log("🔄 Convertendo coordenadas iniciais para endereço...");
+    const endereco_inicial = await getAddressFromCoords(latInicial, lngInicial);
+    console.log("✅ Endereço inicial:", endereco_inicial || "❌ Não foi possível obter");
+
+    console.log("🔄 Convertendo coordenadas finais para endereço...");
+    const endereco_final = await getAddressFromCoords(latFinal, lngFinal);
+    console.log("✅ Endereço final:", endereco_final || "❌ Não foi possível obter");
 
     const fareData = calculateFareSimple({
-      lat1: latitude_inicial,
-      lon1: longitude_inicial,
-      lat2: latitude_final,
-      lon2: longitude_final
+      lat1: latInicial,
+      lon1: lngInicial,
+      lat2: latFinal,
+      lon2: lngFinal
     });
 
     const chamado = await Chamado.create({
-      latitude_inicial,
-      longitude_inicial,
-      latitude_final,
-      longitude_final,
+      latitude_inicial: latInicial,
+      longitude_inicial: lngInicial,
+      latitude_final: latFinal,
+      longitude_final: lngFinal,
       endereco_inicial,
       endereco_final, 
       descricao,
@@ -43,9 +60,14 @@ export const criarChamado = async (req, res) => {
       metodo_pagamento: metodo_pagamento
     });
 
-    console.log("Chamado criado:", chamado);  
+    console.log("✅ Chamado criado:", {
+      id: chamado.id,
+      endereco_inicial: chamado.endereco_inicial,
+      endereco_final: chamado.endereco_final
+    });  
     res.status(201).json(chamado);
   } catch (error) {
+    console.error("❌ Erro ao criar chamado:", error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -73,7 +95,7 @@ export const listaChamadoPorId = async (req, res) => {
 
 export const listarChamadosPorCliente = async (req, res) => {
   try {
-    const clienteId = req.userId;
+    const clienteId = req.params.id;
     console.log("ID do cliente autenticado:", clienteId);
 
     const chamados = await Chamado.findAll({
@@ -174,7 +196,7 @@ export const aceitarChamado = async (req, res) => {
     if (!count) return res.status(409).json({ error: 'Chamado já aceito/cancelado' });
 
     const atualizado = await Chamado.findByPk(req.params.id, {
-      attributes: ['id', 'status_chamado', 'guincheiro_id', 'updated_at'],
+      attributes: ['id', 'status_chamado', 'guincheiro_id', 'requisitado_em'],
     });
     return res.json(atualizado);
   } catch (error) {
@@ -257,7 +279,8 @@ export const obterIdGuincheiro = async (req, res) => {
       where: { id: chamado_id },
       include: [{
         model: Guincheiro,
-        as: 'guincheiro'
+        as: 'guincheiro',
+        attributes: ['id', 'nome', 'telefone', 'foto_url', 'email']
       }]  
     });
 
@@ -265,7 +288,17 @@ export const obterIdGuincheiro = async (req, res) => {
       return res.status(404).json({ error: 'Guincheiro não encontrado para este chamado' });
     }
 
-    res.status(200).json({ guincheiro_id: chamado.guincheiro.id });
+    // Retorna os dados completos do guincheiro
+    res.status(200).json({ 
+      guincheiro_id: chamado.guincheiro.id,
+      guincheiro: {
+        id: chamado.guincheiro.id,
+        nome: chamado.guincheiro.nome,
+        telefone: chamado.guincheiro.telefone,
+        foto_url: chamado.guincheiro.foto_url,
+        email: chamado.guincheiro.email
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -371,12 +404,12 @@ export const detalheChamados = async (req, res) => {
         {
           model: Cliente,
           as: 'cliente',
-          attributes: ['id', 'nome', 'email', 'telefone']
+          attributes: ['id', 'nome', 'email', 'telefone', 'foto_url']
         },
         {
           model: Veiculo,
           as: 'veiculo',
-          attributes: ['modelo', 'ano_fabricacao', 'placa', 'cor']
+          attributes: ['modelo', 'ano_fabricacao', 'placa', 'cor','marca']
         }
       ]
     });
@@ -390,7 +423,8 @@ export const detalheChamados = async (req, res) => {
       cliente: {
         nome: chamado.cliente?.nome,
         email: chamado.cliente?.email,
-        telefone: chamado.cliente?.telefone
+        telefone: chamado.cliente?.telefone,
+        foto_url: chamado.cliente?.foto_url
       },
       endereco_inicio: chamado.endereco_inicial,
       endereco_destino: chamado.endereco_final,
@@ -407,7 +441,8 @@ export const detalheChamados = async (req, res) => {
             modelo: chamado.veiculo.modelo,
             ano: chamado.veiculo.ano_fabricacao,
             placa: chamado.veiculo.placa,
-            cor: chamado.veiculo.cor
+            cor: chamado.veiculo.cor,
+            marca: chamado.veiculo.marca
           }
         : null,
       preco: chamado.preco,
