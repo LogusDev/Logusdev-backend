@@ -83,6 +83,16 @@ const Chamado = Sequelize.define("chamado", {
     cliente_id: {
         type: DataTypes.INTEGER,
         allowNull: true
+    },
+
+    preco:{
+        type: DataTypes.DECIMAL(10,2),
+        allowNull: true
+    },
+
+    metodo_pagamento:{
+        type: DataTypes.ENUM("pix", "dinheiro","cartão"),
+        allowNull: true
     }
 
 },  {

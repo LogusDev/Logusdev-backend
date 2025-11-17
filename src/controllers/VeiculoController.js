@@ -67,7 +67,8 @@ export const buscaVeiculoPorIdPk = async (req, res) => {
 
 export const buscaVeiculoPorId = async (req, res) => {
     try {
-        const veiculo = await Veiculo.findAll({ where: { cliente_id: req.userId } });
+        const clienteId = req.params.id;
+        const veiculo = await Veiculo.findAll({ where: { cliente_id: clienteId } });
         if (!veiculo) {
             return res.status(404).json({ error: "Veículo não encontrado" });
         } else {
