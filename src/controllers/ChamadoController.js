@@ -55,7 +55,7 @@ export const criarChamado = async (req, res) => {
       descricao,
       carro_id,
       cliente_id,
-      guincho_id,
+      guincho_id: null,
       status_chamado: 'aguardando', 
       requisitado_em: new Date(),
       guincheiro_id: null,
