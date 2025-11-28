@@ -37,8 +37,20 @@ const Veiculo = sequelize.define("veiculo", {
     cor: {
         type: DataTypes.STRING(15),
         allowNull: true
-    }
+    },
 
+    ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: 0,
+        allowNull: false
+    },
+
+    cliente_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: "cliente_id" 
+    }
+    
 }, {
     timestamps: false 
 });
