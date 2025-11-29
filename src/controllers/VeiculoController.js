@@ -117,3 +117,26 @@ export const deletaVeiculo = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 }
+
+export const selecionarVeiculoAtual = async (req, res) => {
+    try {
+        const { veiculoId } = req.params;
+        const { cliente_id } = req.body;
+
+        await Veiculo.update(
+            { ativo: 0 },
+            { where: { cliente_id } }
+        )
+
+        await Veiculo.update(
+            { ativo: 1 },
+            { where: { id: veiculoId, cliente_id } }
+        );
+
+        res.json({ message: "Veiculo atual atualizado com sucesso!" });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Erro ao atualizar veiculo atual." })
+    }
+};

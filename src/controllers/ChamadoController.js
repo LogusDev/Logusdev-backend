@@ -56,6 +56,7 @@ export const criarChamado = async (req, res) => {
       descricao,
       carro_id,
       cliente_id,
+      guincho_id: null,
       status_chamado: 'aguardando', 
       requisitado_em: new Date(),
       guincheiro_id: null,
@@ -86,7 +87,33 @@ export const listarChamados = async (req, res) => {
 
 export const listaChamadoPorId = async (req, res) => {
     try {
-        const chamado = await Chamado.findByPk(req.params.id);
+        const chamado = await Chamado.findByPk(req.params.id, {
+          include: [
+            {
+              model: Guincheiro,
+              as : 'guincheiro',
+              attributes: ['id', 'nome', 'telefone', 'email', 'foto_url']
+            },
+
+            {
+              model: Guincho,
+              as : 'guincho',
+              attributes: ['id', 'placa', 'marca', 'modelo', 'ano_fabricacao', 'guincheiro_id', 'capacidade', 'comprimento_plataforma']
+            },
+
+            {
+              model: Cliente,
+              as : 'cliente',
+              attributes: ['id', 'nome', 'telefone', 'email', 'foto_url']
+            },
+
+            {
+              model: Veiculo,
+              as : 'veiculo',
+              attributes: ['id', 'marca', 'modelo', 'ano_fabricacao', 'placa', 'cor']
+            }
+          ]
+        });
         if (!chamado) {
             return res.status(404).json({error: "Chamado não encontrado!"})
         }
@@ -115,6 +142,7 @@ export const listarChamadosPorCliente = async (req, res) => {
           as: 'cliente',
           attributes: ['id', 'nome', 'foto_url']
         },
+
       ],
       attributes: [
         'id',
@@ -477,7 +505,12 @@ export const detalheChamados = async (req, res) => {
         {
           model: Veiculo,
           as: 'veiculo',
-          attributes: ['modelo', 'ano_fabricacao', 'placa', 'cor','marca']
+          attributes: ['modelo', 'ano_fabricacao', 'placa', 'cor']
+        },
+        {
+          model: Guincho,
+          as: 'guincho',
+          attributes: ['id', 'placa', 'marca', 'modelo', 'ano_fabricacao', 'capacidade', 'comprimento_plataforma']
         }
       ]
     });
@@ -526,49 +559,49 @@ export const detalheChamados = async (req, res) => {
 };
 
 
-export const atualizarEnderecosChamadosExistentes = async (req, res) => {
-  const cliente_id = req.userId;
-  console.log("== Atualizando endereços do cliente:", cliente_id);
+// export const atualizarEnderecosChamadosExistentes = async (req, res) => {
+//   const cliente_id = req.userId;
+//   console.log("== Atualizando endereços do cliente:", cliente_id);
 
-  try {
-    const chamados = await Chamado.findAll({
-      where: {
-        cliente_id,
-        [Op.or]: [
-          { endereco_inicial: null },
-          { endereco_final: null },
-        ],
-      },
-    });
+//   try {
+//     const chamados = await Chamado.findAll({
+//       where: {
+//         cliente_id,
+//         [Op.or]: [
+//           { endereco_inicial: null },
+//           { endereco_final: null },
+//         ],
+//       },
+//     });
 
-    for (const chamado of chamados) {
-      const endereco_inicial = chamado.endereco_inicial
-        ? chamado.endereco_inicial
-        : await getAddressFromCoords(chamado.latitude_inicial, chamado.longitude_inicial);
+//     for (const chamado of chamados) {
+//       const endereco_inicial = chamado.endereco_inicial
+//         ? chamado.endereco_inicial
+//         : await getAddressFromCoords(chamado.latitude_inicial, chamado.longitude_inicial);
 
-      const endereco_final = chamado.endereco_final
-        ? chamado.endereco_final
-        : await getAddressFromCoords(chamado.latitude_final, chamado.longitude_final);
+//       const endereco_final = chamado.endereco_final
+//         ? chamado.endereco_final
+//         : await getAddressFromCoords(chamado.latitude_final, chamado.longitude_final);
 
-      chamado.endereco_inicial = endereco_inicial;
-      chamado.endereco_final = endereco_final;
+//       chamado.endereco_inicial = endereco_inicial;
+//       chamado.endereco_final = endereco_final;
 
-      await chamado.save();
+//       await chamado.save();
 
-      console.log(`Chamado ${chamado.id} atualizado:`);
-      console.log(` → Inicial: ${endereco_inicial}`);
-      console.log(` → Final: ${endereco_final}`);
-    }
+//       console.log(`Chamado ${chamado.id} atualizado:`);
+//       console.log(` → Inicial: ${endereco_inicial}`);
+//       console.log(` → Final: ${endereco_final}`);
+//     }
 
-    res.status(200).json({
-      message: "Endereços atualizados com sucesso!",
-      total: chamados.length,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-};
+//     res.status(200).json({
+//       message: "Endereços atualizados com sucesso!",
+//       total: chamados.length,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 
 export const calcularPreco = async (req, res) => {
   try {

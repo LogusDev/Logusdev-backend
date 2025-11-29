@@ -35,13 +35,20 @@ export const buscaGuincheiroPorId = async (req, res) => {
 export const atualizaGuincheiro = async (req, res) => {
     try {
         const { nome, email, senha, cpf, telefone, cnh_num } = req.body;
-        const guincheiro = await Guincheiro.findByPk(req.params.id); 
-        if (!Guincheiro) {
+        const { id } = req.params;
+        const guincheiro = await Guincheiro.findByPk(id);
+        
+        if (!guincheiro) {
             return res.status(404).json({ error: "Guincheiro não encontrado" });
-        } else {
-            await Guincheiro.update({ nome, email, senha, cpf, telefone, cnh_num });
-            res.status(200).json(Guincheiro);
         }
+        await Guincheiro.update(
+            { nome, email, senha, cpf, telefone, cnh_num },
+            { where: { id } }
+        );
+        const atualizado = await Guincheiro.findByPk(id);
+
+        res.status(200).json(atualizado);
+
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

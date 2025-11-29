@@ -1,5 +1,6 @@
 import express from 'express';
-import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, recusarChamado, obterIdGuincheiro, avaliarChamado,listarChamadosPorCliente, atualizarEnderecosChamadosExistentes, detalheChamados, obterChamadosEmAndamento, calcularPreco, listarGuincheirosDisponiveis, escolherGuincheiro } from '../controllers/ChamadoController.js';
+import { criarChamado, listarChamados, listaChamadoPorId, atualizarStatusChamado, deletarChamado, obterStatusChamado, aceitarChamado, cancelarChamado, recusarChamado, obterIdGuincheiro, avaliarChamado,listarChamadosPorCliente, atualizarEnderecosChamadosExistentes, detalheChamados, obterChamadosEmAndamento, calcularPreco,listarGuincheirosDisponiveis, escolherGuincheiro } from '../controllers/ChamadoController.js';
+import verifyJWT from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ router.get('/', listarChamados);
 // Rotas específicas
 router.get('/andamento', obterChamadosEmAndamento);
 router.get('/cliente/meus/:id', listarChamadosPorCliente);
-router.put('/atualizar-enderecos', atualizarEnderecosChamadosExistentes);
+// router.put('/atualizar-enderecos', atualizarEnderecosChamadosExistentes);
 router.post('/calcularPreco', calcularPreco);
 router.post('/avaliar', avaliarChamado);
 router.get('/obter/:chamado_id', obterIdGuincheiro);
