@@ -47,3 +47,4 @@ export const buscaBaseGuinchosPorModelo = async (req, res) => {
 
 
 
+
