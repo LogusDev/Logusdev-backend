@@ -5,8 +5,16 @@ const SECRET = "teste"
 
 export const criarGuincheiro = async (req, res) => {
     try {
-        const { nome, email, senha, cpf, telefone, cnh_num } = req.body;
-        const novoGuincheiro = await Guincheiro.create({ nome, email, senha, cpf, telefone, cnh_num });
+        const { nome, email, senha, cpf, telefone, cnh_num, foto_url, cnh_url } = req.body;
+        const novoGuincheiro = await Guincheiro.create({ 
+            nome, 
+            email, 
+            senha, 
+            cpf, 
+            telefone, 
+            cnh_num,
+            foto_url,
+        });
         res.status(201).json(novoGuincheiro);
     } catch (error) {
         res.status(400).json({ error: error.message });   

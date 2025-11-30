@@ -35,27 +35,34 @@ export const buscaGuinchosPorGuincheiro = async (req, res) => {
 
 // Criar guincho
 export const adicionarGuincho = async (req, res) => {
-    try {
-        const { placa, marca, modelo, ano_fabricacao, capacidade, comprimento_plataforma } = req.body;
-        const guincheiro_id = req.userId;
+  try {
+    const { placa, marca, modelo, ano_fabricacao, capacidade, comprimento_plataforma, cor } = req.body;
+    const guincheiroId = req.userId || req.body.guincheiro_id; // pega do token ou do body
 
-         if (!guincheiro_id) return res.status(401).json({ error: "Usuário não autenticado" });
-
-        const novoGuincho = await Guincho.create({
-            placa,
-            marca,
-            modelo,
-            ano_fabricacao,
-            capacidade,
-            comprimento_plataforma,
-            guincheiro_id
-        });
-
-        return res.status(201).json(novoGuincho);
-    } catch (error) {
-        return res.status(400).json({ error: error.message });
+    if (!guincheiroId) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
     }
+
+    const novoGuincho = await Guincho.create({
+      placa,
+      marca,
+      modelo,
+      cor,
+      ano_fabricacao,
+      capacidade,
+      comprimento_plataforma,
+      guincheiro_id: guincheiroId
+    });
+
+    console.log('✅ [adicionarGuincho] Guincho criado com sucesso:', novoGuincho.toJSON());
+    return res.status(201).json(novoGuincho);
+
+  } catch (error) {
+    console.error('❌ [adicionarGuincho] Erro ao criar guincho:', error);
+    return res.status(400).json({ error: error.message });
+  }
 };
+
 
 // Editar guincho
 export const editarGuincho = async (req, res) => {

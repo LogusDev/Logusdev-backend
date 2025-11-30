@@ -4,6 +4,7 @@ import Cliente from "../models/Cliente.js";
 import Guincheiro from "../models/Guincheiro.js";
 import Veiculo from "../models/Veiculo.js";
 import Guincho from "../models/Guincho.js";
+import ValoresGuincho from "../models/ValoresGuincho.js";
 import getAddressFromCoords from "../services/geocode.js";
 import { Op } from "sequelize";
 import { calculateFareSimple } from "../helpers/value.js";
@@ -130,7 +131,7 @@ export const listarChamadosPorCliente = async (req, res) => {
     const chamados = await Chamado.findAll({
       where: { cliente_id: clienteId },
       order: [['requisitado_em', 'DESC']],
-      include: [ //Join para pegar o nome do guincheiro (Se precisar, do cliente também) 
+      include: [ //Join para pegar o nome do guincheiro 
         {
           model: Guincheiro,
           as: 'guincheiro',
@@ -244,18 +245,23 @@ export const aceitarChamado = async (req, res) => {
     const { guincheiro_id } = req.body;
     if (!guincheiro_id) return res.status(400).json({ error: 'guincheiro_id obrigatório' });
 
-    const [count] = await Chamado.update(
-      { guincheiro_id, status_chamado: 'em andamento' },
-      {
-        where: {
-          id: req.params.id,
-          status_chamado: 'aguardando',
-          guincheiro_id: null,
-        },
-      }
-    );
+    const chamado = await Chamado.findByPk(req.params.id);
+    
+    if (!chamado) {
+      return res.status(404).json({ error: 'Chamado não encontrado' });
+    }
 
-    if (!count) return res.status(409).json({ error: 'Chamado já aceito/cancelado' });
+    if (chamado.guincheiro_id !== parseInt(guincheiro_id)) {
+      return res.status(403).json({ error: 'Este chamado não está atribuído a você' });
+    }
+
+    if (chamado.status_chamado !== 'aguardando') {
+      return res.status(409).json({ error: 'Chamado já aceito ou cancelado' });
+    }
+
+    await chamado.update({
+      status_chamado: 'em andamento'
+    });
 
     const atualizado = await Chamado.findByPk(req.params.id, {
       attributes: ['id', 'status_chamado', 'guincheiro_id', 'requisitado_em'],
@@ -274,6 +280,38 @@ export const cancelarChamado = async (req, res) => {
     );
     if (!count) return res.status(409).json({ error: 'Não é possível cancelar agora' });
     return res.status(200).json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const recusarChamado = async (req, res) => {
+  try {
+    const { guincheiro_id } = req.body;
+    if (!guincheiro_id) return res.status(400).json({ error: 'guincheiro_id obrigatório' });
+
+    const chamado = await Chamado.findByPk(req.params.id);
+    
+    if (!chamado) {
+      return res.status(404).json({ error: 'Chamado não encontrado' });
+    }
+
+    if (chamado.guincheiro_id !== parseInt(guincheiro_id)) {
+      return res.status(403).json({ error: 'Este chamado não está atribuído a você' });
+    }
+
+    if (chamado.status_chamado !== 'aguardando') {
+      return res.status(409).json({ error: 'Chamado já foi aceito ou cancelado' });
+    }
+
+    await chamado.update({
+      guincheiro_id: null
+    });
+
+    return res.status(200).json({ 
+      message: 'Chamado recusado com sucesso',
+      ok: true 
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -337,16 +375,15 @@ export const obterIdGuincheiro = async (req, res) => {
     const { chamado_id } = req.params;
     console.log(chamado_id);
 
-    // --- 1. Busca principal com include aninhado ---
     const chamado = await Chamado.findOne({
       where: { id: chamado_id },
       include: [{
         model: Guincheiro,
-        as: 'guincheiro', // O guincheiro associado ao chamado
+        as: 'guincheiro',
         attributes: ['id', 'nome', 'telefone', 'foto_url', 'email'],
-        include: { // <-- Include aninhado
+        include: { 
           model: Guincho,
-          as: 'guincho', // O guincho associado ao guincheiro
+          as: 'guincho', 
           attributes: ['placa', 'marca', 'modelo', 'ano_fabricacao']
         }
       }]
@@ -358,12 +395,10 @@ export const obterIdGuincheiro = async (req, res) => {
 
     const guincheiro_id = chamado.guincheiro.id;
 
-    // --- 2. Busca de estatísticas em paralelo ---
     const [
       statsAvaliacao,
       totalChamadosConcluidos
     ] = await Promise.all([
-      // Query 1: Calcular a Média de Avaliações
       Avaliacao.findOne({
         attributes: [
           [Sequelize.fn('AVG', Sequelize.col('nota')), 'mediaGeral']
@@ -371,7 +406,6 @@ export const obterIdGuincheiro = async (req, res) => {
         where: { guincheiro_id },
         raw: true
       }),
-      // Query 2: Contar total de chamados concluídos
       Chamado.count({
         where: {
           guincheiro_id,
@@ -380,24 +414,20 @@ export const obterIdGuincheiro = async (req, res) => {
       })
     ]);
 
-    // --- 3. Montar e Enviar a Resposta ---
 
-    // Formata a média (igual fizemos antes)
     const mediaFormatada = statsAvaliacao.mediaGeral
       ? Number(parseFloat(statsAvaliacao.mediaGeral).toFixed(1))
       : 0;
 
-    // Converte o guincheiro (que é um objeto Sequelize) para JSON
-    // Isso já inclui o objeto 'guincho' aninhado que buscamos no passo 1
     const guincheiroData = chamado.guincheiro.toJSON();
 
     // Resposta final
     res.status(200).json({
       guincheiro_id: guincheiroData.id,
       guincheiro: {
-        ...guincheiroData, // Inclui id, nome, tel, foto, email E o 'guincho'
-        media_avaliacoes: mediaFormatada, // Adiciona a média
-        total_chamados_atendidos: totalChamadosConcluidos // Adiciona o total
+        ...guincheiroData,
+        media_avaliacoes: mediaFormatada, 
+        total_chamados_atendidos: totalChamadosConcluidos 
       }
     });
 
@@ -409,6 +439,11 @@ export const obterIdGuincheiro = async (req, res) => {
 
 export const obterChamadosEmAndamento = async (req, res) => {
     try {
+        const guincheiro_id = req.query.guincheiro_id;
+
+        if (!guincheiro_id) {
+            return res.status(400).json({ error: "guincheiro_id é obrigatório" });
+        }
 
         const guincheiroLocation = {
             lat: parseFloat(req.query.lat),
@@ -416,26 +451,24 @@ export const obterChamadosEmAndamento = async (req, res) => {
         };
 
         console.log("LOCAL RECEBIDA:", guincheiroLocation);
-
-        console.log(guincheiroLocation)
+        console.log("GUINCHEIRO ID:", guincheiro_id);
 
         const chamados = await Chamado.findAll({
-            where: { status_chamado: 'aguardando' },
-            // Incluindo os 3 modelos diretamente, conforme suas associações:
+            where: { 
+                guincheiro_id: guincheiro_id,
+                status_chamado: { [Op.in]: ['em andamento', 'aguardando'] }
+            },
             include: [
                 { 
                     model: Cliente, 
                     as: 'cliente', 
-                    // Precisamos de nome e foto para o card
                     attributes: ['id', 'nome', 'foto_url'] 
                 },
                 { 
                     model: Veiculo, 
-                    as: 'veiculo', // Usando seu alias: 'veiculo'
-                    // Precisamos de marca, modelo e ano para o card
+                    as: 'veiculo',
                     attributes: ['marca', 'modelo', 'ano_fabricacao']
                 }
-                // Guincheiro não é necessário, pois o chamado 'aguardando' não tem guincheiro_id
             ],
             order: [['requisitado_em', 'ASC']]
         });
@@ -455,12 +488,10 @@ export const obterChamadosEmAndamento = async (req, res) => {
             const requisitado = new Date(c.requisitado_em).getTime();
             const minutosEspera = Math.max(0, Math.floor((now - requisitado) / 60000));
             
-            // 1. Informação do Veículo
             const veiculoInfo = c.veiculo ? 
                 `${c.veiculo.marca} ${c.veiculo.modelo} ${c.veiculo.ano_fabricacao}` : 
                 'Veículo Não Informado';
 
-            // 2. Cálculo da Distância
             const distanciaKm = calcularDistancia(
                 guincheiroLocation.lat, 
                 guincheiroLocation.lng, 
@@ -471,20 +502,15 @@ export const obterChamadosEmAndamento = async (req, res) => {
             return {
                 id: c.id,
                 
-                // Cliente e Foto
                 cliente_nome: c.cliente?.nome ?? null,
                 cliente_foto_url: c.cliente?.foto_url ?? null, 
                 
-                // Veículo (Ex: Fiat Palio EX 1998)
                 veiculo_info: veiculoInfo, 
                 
-                // Tempo (Ex: Há 1h30)
                 tempo_espera_formatado: formatDuration(minutosEspera), 
                 
-                // Distância (Ex: 282km)
                 distancia_km: distanciaKm.toFixed(0), 
                 
-                // Dados Originais
                 requisicao_em: c.requisitado_em,
                 latitude_inicial: c.latitude_inicial,
                 longitude_inicial: c.longitude_inicial
@@ -493,7 +519,6 @@ export const obterChamadosEmAndamento = async (req, res) => {
 
         return res.status(200).json(resultado);
     } catch (error) {
-        // Use console.error para ver detalhes no servidor
         console.error("Erro ao buscar chamados em andamento:", error.message); 
         return res.status(500).json({ error: error.message });
     }
@@ -626,5 +651,228 @@ export const calcularPreco = async (req, res) => {
     console.log(fareData);
   } catch (err) {
     return res.status(400).json({ error: err.message });
+  }
+};
+
+export const listarGuincheirosDisponiveis = async (req, res) => {
+  try {
+    const chamado_id = req.params.id;
+
+    console.log('🔍 [listarGuincheirosDisponiveis] Buscando guincheiros para chamado:', chamado_id);
+
+    const chamado = await Chamado.findByPk(chamado_id);
+    if (!chamado) {
+      console.log('❌ [listarGuincheirosDisponiveis] Chamado não encontrado');
+      return res.status(404).json({ error: "Chamado não encontrado" });
+    }
+
+    if (chamado.status_chamado !== 'aguardando' || chamado.guincheiro_id !== null) {
+      console.log('❌ [listarGuincheirosDisponiveis] Chamado já foi atribuído ou não está aguardando');
+      return res.status(400).json({ error: "Este chamado já foi atribuído a um guincheiro" });
+    }
+
+    console.log('📋 [listarGuincheirosDisponiveis] Buscando todos os guincheiros com guincho e valores...');
+    
+    // Primeiro, vamos ver quantos guincheiros existem no total
+    const totalGuincheiros = await Guincheiro.count();
+    console.log('📊 [listarGuincheirosDisponiveis] Total de guincheiros cadastrados:', totalGuincheiros);
+
+    // Verificar guinchos cadastrados
+    const totalGuinchos = await Guincho.count();
+    console.log('📊 [listarGuincheirosDisponiveis] Total de guinchos cadastrados:', totalGuinchos);
+
+    // Verificar valores cadastrados
+    const totalValores = await ValoresGuincho.count();
+    console.log('📊 [listarGuincheirosDisponiveis] Total de registros de valores:', totalValores);
+
+    const guincheiros = await Guincheiro.findAll({
+      include: [
+        {
+          model: Guincho,
+          as: 'guincho',
+          attributes: ['id', 'placa', 'marca', 'modelo', 'ano_fabricacao', 'capacidade', 'comprimento_plataforma'],
+          required: true 
+        },
+        {
+          model: ValoresGuincho,
+          as: 'valoresGuincho',
+          attributes: ['idValor', 'valorSaida', 'valorKm', 'dataRegistro'],
+          required: true 
+        }
+      ],
+      attributes: ['id', 'nome', 'foto_url']
+    });
+
+    console.log('✅ [listarGuincheirosDisponiveis] Guincheiros encontrados com guincho e valores:', guincheiros.length);
+    
+    if (guincheiros.length === 0) {
+      console.log('⚠️ [listarGuincheirosDisponiveis] Nenhum guincheiro encontrado com guincho e valores cadastrados!');
+      console.log('🔍 [listarGuincheirosDisponiveis] Verificando guinchos sem relacionamento...');
+      
+      // Verificar se há guinchos cadastrados sem relacionamento
+      const guinchosSemRelacao = await Guincho.findAll({
+        include: [{
+          model: Guincheiro,
+          as: 'guincheiro',
+          required: false
+        }],
+        where: {
+          guincheiro_id: { [Op.not]: null }
+        }
+      });
+      console.log('📊 [listarGuincheirosDisponiveis] Guinchos com guincheiro_id preenchido:', guinchosSemRelacao.length);
+      
+      // Verificar se há valores sem relacionamento
+      const valoresSemRelacao = await ValoresGuincho.findAll();
+      console.log('📊 [listarGuincheirosDisponiveis] Total de registros de ValoresGuincho:', valoresSemRelacao.length);
+      valoresSemRelacao.forEach(v => {
+        console.log(`  - idValor: ${v.idValor}, idGuincheiro: ${v.idGuincheiro}, valorSaida: ${v.valorSaida}, valorKm: ${v.valorKm}`);
+      });
+    }
+
+    const guincheirosComValores = guincheiros
+      .filter(g => g.guincho && g.valoresGuincho && g.valoresGuincho.length > 0)
+      .map(g => {
+        const valoresOrdenados = [...g.valoresGuincho].sort((a, b) => 
+          new Date(b.dataRegistro) - new Date(a.dataRegistro)
+        );
+        return {
+          ...g.toJSON(),
+          valoresGuincho: [valoresOrdenados[0]] 
+        };
+      });
+
+    const resultado = await Promise.all(
+      guincheirosComValores.map(async (guincheiro) => {
+        const valorAtual = guincheiro.valoresGuincho[0];
+
+        const distanciaTotalKm = calcularDistancia(
+          chamado.latitude_inicial,
+          chamado.longitude_inicial,
+          chamado.latitude_final,
+          chamado.longitude_final
+        );
+
+        const precoAproximado = parseFloat(valorAtual.valorSaida) + (distanciaTotalKm * parseFloat(valorAtual.valorKm));
+
+        const statsAvaliacao = await Avaliacao.findOne({
+          attributes: [
+            [Sequelize.fn('AVG', Sequelize.col('nota')), 'mediaGeral']
+          ],
+          where: { guincheiro_id: guincheiro.id },
+          raw: true
+        });
+
+        const mediaAvaliacoes = statsAvaliacao?.mediaGeral
+          ? Number(parseFloat(statsAvaliacao.mediaGeral).toFixed(1))
+          : 0;
+
+        return {
+          id: guincheiro.id,
+          nome: guincheiro.nome,
+          foto_url: guincheiro.foto_url,
+          avaliacao: mediaAvaliacoes,
+          valorSaida: parseFloat(valorAtual.valorSaida),
+          valorKm: parseFloat(valorAtual.valorKm),
+          precoAproximado: parseFloat(precoAproximado.toFixed(2)),
+          distanciaKm: parseFloat(distanciaTotalKm.toFixed(2)),
+          guincho: {
+            modelo: guincheiro.guincho.modelo,
+            marca: guincheiro.guincho.marca,
+            ano: guincheiro.guincho.ano_fabricacao,
+            capacidade: parseFloat(guincheiro.guincho.capacidade),
+            comprimento: parseFloat(guincheiro.guincho.comprimento_plataforma),
+            placa: guincheiro.guincho.placa
+          }
+        };
+      })
+    );
+
+    resultado.sort((a, b) => a.precoAproximado - b.precoAproximado);
+
+    res.status(200).json(resultado);
+  } catch (error) {
+    console.error("Erro ao listar guincheiros disponíveis:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const escolherGuincheiro = async (req, res) => {
+  try {
+    const chamado_id = req.params.id;
+    const { guincheiro_id } = req.body;
+
+    if (!guincheiro_id) {
+      return res.status(400).json({ error: "guincheiro_id é obrigatório" });
+    }
+
+    const chamado = await Chamado.findByPk(chamado_id);
+    if (!chamado) {
+      return res.status(404).json({ error: "Chamado não encontrado" });
+    }
+
+    if (chamado.status_chamado !== 'aguardando' || chamado.guincheiro_id !== null) {
+      return res.status(400).json({ error: "Este chamado já foi atribuído a um guincheiro" });
+    }
+
+    const guincheiro = await Guincheiro.findByPk(guincheiro_id, {
+      include: [
+        {
+          model: ValoresGuincho,
+          as: 'valoresGuincho',
+          order: [['dataRegistro', 'DESC']],
+          limit: 1
+        }
+      ]
+    });
+
+    if (!guincheiro) {
+      return res.status(404).json({ error: "Guincheiro não encontrado" });
+    }
+
+    if (!guincheiro.valoresGuincho || guincheiro.valoresGuincho.length === 0) {
+      return res.status(400).json({ error: "Este guincheiro não possui valores cadastrados" });
+    }
+
+    const valorAtual = guincheiro.valoresGuincho[0];
+    const distanciaTotalKm = calcularDistancia(
+      chamado.latitude_inicial,
+      chamado.longitude_inicial,
+      chamado.latitude_final,
+      chamado.longitude_final
+    );
+
+    const precoFinal = parseFloat(valorAtual.valorSaida) + (distanciaTotalKm * parseFloat(valorAtual.valorKm));
+
+    await chamado.update({
+      guincheiro_id: guincheiro_id,
+      status_chamado: 'aguardando', 
+      preco: parseFloat(precoFinal.toFixed(2))
+    });
+
+    const chamadoAtualizado = await Chamado.findByPk(chamado_id, {
+      include: [
+        {
+          model: Guincheiro,
+          as: 'guincheiro',
+          attributes: ['id', 'nome', 'foto_url', 'telefone'],
+          include: [
+            {
+              model: Guincho,
+              as: 'guincho',
+              attributes: ['modelo', 'marca', 'ano_fabricacao', 'placa']
+            }
+          ]
+        }
+      ]
+    });
+
+    res.status(200).json({
+      message: "Guincheiro escolhido com sucesso",
+      chamado: chamadoAtualizado
+    });
+  } catch (error) {
+    console.error("Erro ao escolher guincheiro:", error);
+    res.status(500).json({ error: error.message });
   }
 };
