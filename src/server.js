@@ -7,6 +7,8 @@ import guincheiroRoutes from './routers/guincheirosRoutes.js';
 import veiculoRoutes from './routers/veiculosRoutes.js';
 import chamadosRoutes from './routers/chamadosRoutes.js';
 import guinchosRoutes from './routers/guinchosRoutes.js';
+import baseGuinchosRoutes from './routers/baseGuinchosRoutes.js';
+import valoresGuinchoRoutes from './routers/valoresGuinchoRoutes.js';
 import cors from 'cors';
 import { setupSwagger } from '../swagger.js';
 import Chamado from './models/Chamado.js';
@@ -38,6 +40,8 @@ app.use('/guincheiros', guincheiroRoutes);
 app.use('/veiculos', veiculoRoutes);
 app.use('/chamados', chamadosRoutes );
 app.use('/guinchos', guinchosRoutes);
+app.use('/base-guinchos', baseGuinchosRoutes);
+app.use('/valores-guincho', valoresGuinchoRoutes);
 
 
 const confirmacoesPorChamado = new Map();

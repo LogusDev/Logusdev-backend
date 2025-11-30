@@ -626,14 +626,32 @@ export const listarGuincheirosDisponiveis = async (req, res) => {
   try {
     const chamado_id = req.params.id;
 
+    console.log('🔍 [listarGuincheirosDisponiveis] Buscando guincheiros para chamado:', chamado_id);
+
     const chamado = await Chamado.findByPk(chamado_id);
     if (!chamado) {
+      console.log('❌ [listarGuincheirosDisponiveis] Chamado não encontrado');
       return res.status(404).json({ error: "Chamado não encontrado" });
     }
 
     if (chamado.status_chamado !== 'aguardando' || chamado.guincheiro_id !== null) {
+      console.log('❌ [listarGuincheirosDisponiveis] Chamado já foi atribuído ou não está aguardando');
       return res.status(400).json({ error: "Este chamado já foi atribuído a um guincheiro" });
     }
+
+    console.log('📋 [listarGuincheirosDisponiveis] Buscando todos os guincheiros com guincho e valores...');
+    
+    // Primeiro, vamos ver quantos guincheiros existem no total
+    const totalGuincheiros = await Guincheiro.count();
+    console.log('📊 [listarGuincheirosDisponiveis] Total de guincheiros cadastrados:', totalGuincheiros);
+
+    // Verificar guinchos cadastrados
+    const totalGuinchos = await Guincho.count();
+    console.log('📊 [listarGuincheirosDisponiveis] Total de guinchos cadastrados:', totalGuinchos);
+
+    // Verificar valores cadastrados
+    const totalValores = await ValoresGuincho.count();
+    console.log('📊 [listarGuincheirosDisponiveis] Total de registros de valores:', totalValores);
 
     const guincheiros = await Guincheiro.findAll({
       include: [
@@ -652,6 +670,33 @@ export const listarGuincheirosDisponiveis = async (req, res) => {
       ],
       attributes: ['id', 'nome', 'foto_url']
     });
+
+    console.log('✅ [listarGuincheirosDisponiveis] Guincheiros encontrados com guincho e valores:', guincheiros.length);
+    
+    if (guincheiros.length === 0) {
+      console.log('⚠️ [listarGuincheirosDisponiveis] Nenhum guincheiro encontrado com guincho e valores cadastrados!');
+      console.log('🔍 [listarGuincheirosDisponiveis] Verificando guinchos sem relacionamento...');
+      
+      // Verificar se há guinchos cadastrados sem relacionamento
+      const guinchosSemRelacao = await Guincho.findAll({
+        include: [{
+          model: Guincheiro,
+          as: 'guincheiro',
+          required: false
+        }],
+        where: {
+          guincheiro_id: { [Op.not]: null }
+        }
+      });
+      console.log('📊 [listarGuincheirosDisponiveis] Guinchos com guincheiro_id preenchido:', guinchosSemRelacao.length);
+      
+      // Verificar se há valores sem relacionamento
+      const valoresSemRelacao = await ValoresGuincho.findAll();
+      console.log('📊 [listarGuincheirosDisponiveis] Total de registros de ValoresGuincho:', valoresSemRelacao.length);
+      valoresSemRelacao.forEach(v => {
+        console.log(`  - idValor: ${v.idValor}, idGuincheiro: ${v.idGuincheiro}, valorSaida: ${v.valorSaida}, valorKm: ${v.valorKm}`);
+      });
+    }
 
     const guincheirosComValores = guincheiros
       .filter(g => g.guincho && g.valoresGuincho && g.valoresGuincho.length > 0)

@@ -46,7 +46,7 @@ const Guincheiro = sequelize.define("guincheiro", {
         type: DataTypes.STRING(255),
         allowNull: true
     }, 
-
+    
     cnh_num: {
         type: DataTypes.CHAR(11),
         allowNull: false,

@@ -1,8 +1,7 @@
 import { DataTypes, Sequelize } from "sequelize";  
 import sequelize from "../database/conexao_database.js"; 
-import Guincheiro from './Guincheiro.js'
 
-const Guincho = sequelize.define("guincho", {
+const BaseGuincho = sequelize.define("baseGuinchos", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -38,29 +37,14 @@ const Guincho = sequelize.define("guincho", {
     comprimento_plataforma: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
-    },
-
-    guincheiro_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'guincheiro',
-            key: 'id'
-        }
     }
 
 }, {
-    timestamps: false
+    timestamps: false,
+    tableName: 'baseGuinchos'
 });
 
-Guincheiro.hasOne(Guincho, {
-    foreignKey: 'guincheiro_id',
-    as: 'guincho'
-});
+export default BaseGuincho;
 
-Guincho.belongsTo(Guincheiro, {
-    foreignKey: 'guincheiro_id',
-    as: 'guincheiro'
-});
 
-export default Guincho;
+

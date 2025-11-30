@@ -132,7 +132,8 @@ export const loginCliente = async (req, res) => {
                 telefone: cliente.telefone,
                 cpf: cliente.cpf,
                 cnh_num: cliente.cnh_num,
-                foto_url: cliente.foto_url
+                foto_url: cliente.foto_url,
+                created_at: cliente.created_at
             }
         });
 

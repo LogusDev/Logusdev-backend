@@ -3,18 +3,28 @@ import axios from 'axios';
 
 export const adicionarVeiculo = async (req, res) => {
     try {
-        const {placa, marca, modelo, ano_fabricacao, categoria, cor} = req.body;
-        const cliente_id = req.userId
+        const {placa, marca, modelo, ano_fabricacao, categoria, cor, cliente_id: cliente_id_body} = req.body;
+        const cliente_id = req.userId || cliente_id_body;
+        
+        if (!cliente_id) {
+            return res.status(400).json({ error: "cliente_id é obrigatório" });
+        }
         
         const responseModelos = await axios.get(
         `https://fipe.parallelum.com.br/api/v2/cars/brands/${marca}/models`
         );
 
-        const modeloEncontrado = responseModelos.data.find(
+        let modeloEncontrado = responseModelos.data.find(
         (m) => m.code == modelo
         );
+        
+        if (!modeloEncontrado) {
+            modeloEncontrado = responseModelos.data.find(
+                (m) => m.name.toLowerCase() === modelo.toLowerCase()
+            );
+        }
 
-        console.log('Nome do modelo:', modeloEncontrado.name);
+        const nomeModelo = modeloEncontrado ? modeloEncontrado.name : modelo;
 
         const responseMarcas = await axios.get(`https://fipe.parallelum.com.br/api/v2/cars/brands/`
         );
@@ -23,13 +33,16 @@ export const adicionarVeiculo = async (req, res) => {
             (m) => m.code == marca
         );
 
-        console.log('Nome da marca:', marcaEncontrada.name);
+        const nomeMarca = marcaEncontrada ? marcaEncontrada.name : marca;
+
+        console.log('Nome do modelo:', nomeModelo);
+        console.log('Nome da marca:', nomeMarca);
 
         const novoVeiculo = await Veiculo.create({
             placa, 
-            marca:marcaEncontrada.name,
+            marca: nomeMarca,
             cor,
-            modelo:modeloEncontrado.name,
+            modelo: nomeModelo,
             ano_fabricacao,
             categoria,
             cliente_id});

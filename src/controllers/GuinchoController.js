@@ -32,13 +32,34 @@ export const buscaGuinchosPorGuincheiro = async (req, res) => {
 
 export const adicionarGuincho = async (req, res) => {
     try {
-        const { placa, marca, modelo, ano_fabricacao, capacidade, comprimento_plataforma, cor } = req.body;
-        const guincheiro_id = req.guincheiroId;
+        console.log('🚗 [adicionarGuincho] Body recebido:', req.body);
+        const { placa, marca, modelo, ano_fabricacao, capacidade, comprimento_plataforma, cor, guincheiro_id } = req.body;
+        
+        // Aceita guincheiro_id do body ou do req (para compatibilidade)
+        const guincheiroId = guincheiro_id || req.guincheiroId;
+        
+        console.log('🆔 [adicionarGuincho] ID do guincheiro a ser usado:', guincheiroId);
+        
+        if (!guincheiroId) {
+            console.error('❌ [adicionarGuincho] Erro: guincheiro_id não fornecido');
+            return res.status(400).json({ error: 'guincheiro_id é obrigatório' });
+        }
+        
         const novoGuincho = await Guincho.create({
-            placa, marca, cor, modelo, ano_fabricacao, capacidade, comprimento_plataforma, guincheiro_id
+            placa, 
+            marca, 
+            cor, 
+            modelo, 
+            ano_fabricacao, 
+            capacidade, 
+            comprimento_plataforma, 
+            guincheiro_id: guincheiroId
         });
+        
+        console.log('✅ [adicionarGuincho] Guincho criado com sucesso:', novoGuincho.toJSON());
         return res.status(201).json(novoGuincho);
     } catch (error) {
+        console.error('❌ [adicionarGuincho] Erro ao criar guincho:', error);
         return res.status(400).json({ error: error.message });
     }
 };
