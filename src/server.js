@@ -162,6 +162,23 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('send-message', (data) => {
+        const { callId, message, senderId, senderName, senderType } = data;
+        console.log(`Mensagem recebida para chamado ${callId} de ${senderName} (${senderType}):`, message);
+        
+        const messageData = {
+            callId,
+            message,
+            senderId,
+            senderName,
+            senderType,
+            timestamp: new Date().toISOString()
+        };
+        
+        // Envia a mensagem para todos na sala do chamado
+        io.to(`call-${callId}`).emit('new-message', messageData);
+    });
+
     socket.on('disconnect', () => {
         console.log('Cliente desconectado:', socket.id);
     });
