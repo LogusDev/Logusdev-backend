@@ -1,4 +1,7 @@
 import Guincheiro from '../models/Guincheiro.js';
+import jwt from "jsonwebtoken";
+
+const SECRET = "teste"
 
 export const criarGuincheiro = async (req, res) => {
     try {
@@ -37,7 +40,7 @@ export const atualizaGuincheiro = async (req, res) => {
         const { nome, email, senha, cpf, telefone, cnh_num } = req.body;
         const { id } = req.params;
         const guincheiro = await Guincheiro.findByPk(id);
-        
+
         if (!guincheiro) {
             return res.status(404).json({ error: "Guincheiro não encontrado" });
         }
@@ -71,20 +74,37 @@ export const deletaGuincheiro = async (req, res) => {
 export const loginGuincheiro = async (req, res) => {
     try {
         const { email, senha } = req.body;
-        const guincheiro = await Guincheiro.findOne({where: { email }});
-
-        console.log(email,senha)
 
         if (!email || !senha) {
-            return res.status(400).json({error: "Preencha todos os campos!"})
+            return res.status(400).json({ error: "Preencha todos os campos!" });
         }
 
-        if (!guincheiro || guincheiro.senha !== senha) {
-            return res.status(404).json({error: "Credenciais inválidas!"})
-        } 
+        const guincheiro = await Guincheiro.findOne({ where: { email } });
 
-        res.status(200).json({message: "Login realizado com sucesso!", guincheiro})
+        if (!guincheiro) {
+            return res.status(404).json({ error: "Credenciais inválidas!" });
+        }
+
+        const token = jwt.sign(
+            { userId: guincheiro.id, tipo: "guincheiro" },
+            SECRET,
+            { expiresIn: "1d" }
+        );
+
+        return res.json({
+            auth: true,
+            token,
+            guincheiro: {
+                id: guincheiro.id,
+                nome: guincheiro.nome,
+                email: guincheiro.email,
+                telefone: guincheiro.telefone,
+                foto_url: guincheiro.foto_url
+            }
+        });
+
     } catch (error) {
-        res.status(500).json({error: error.message})
+        res.status(500).json({ error: error.message });
     }
-}
+};
+

@@ -1,13 +1,27 @@
 import { Router } from 'express';
-import { buscaGuincho, buscaGuinchoPorId, buscaGuinchosPorGuincheiro, adicionarGuincho } from '../controllers/GuinchoController.js';
+import {
+  buscaGuincho,
+  buscaGuinchoPorId,
+  buscaGuinchosPorGuincheiro,
+  adicionarGuincho,
+  editarGuincho,
+  deletarGuincho,
+  listaModelosGuincho,
+  selecionarGuinchoAtual
+} from '../controllers/GuinchoController.js';
+import verifyJWT from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
-router.get('/', buscaGuincho);                          // GET /guinchos
-router.get('/:id', buscaGuinchoPorId);                  // GET /guinchos/:id (guincho por PK)
-router.get('/guincheiro/:id', buscaGuinchosPorGuincheiro); // GET /guinchos/guincheiro/:id (guinchos de um guincheiro)  
-router.post('/', adicionarGuincho);
+router.get('/modelos', listaModelosGuincho); 
+router.get('/guincheiro/:id', buscaGuinchosPorGuincheiro);
+router.get('/', buscaGuincho);
+router.get('/:id', buscaGuinchoPorId);
+router.post('/', verifyJWT, adicionarGuincho);
+router.put('/:id', verifyJWT, editarGuincho);
+router.delete('/:id', deletarGuincho);
+router.put('/:guinchoId/selecionar', verifyJWT, selecionarGuinchoAtual);
 
-// opcional: todos os guinchos de um guincheiro
-// preferível: /guincheiros/:id/guinchos (colocar esta rota no guincheirosRoutes)
+
+
 export default router;

@@ -38,20 +38,32 @@ const Guincho = sequelize.define("guincho", {
     comprimento_plataforma: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
-    }
+    },
+
+    guincheiro_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+
+    ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: 0,
+        allowNull: false
+    },
 
 }, {
     timestamps: false
 });
 
-Guincheiro.hasOne(Guincho, {
+Guincheiro.hasMany(Guincho, {
     foreignKey: 'guincheiro_id',
-    as: 'guincho'
+    as: 'guinchos'
 });
 
 Guincho.belongsTo(Guincheiro, {
     foreignKey: 'guincheiro_id',
     as: 'guincheiro'
 });
+
 
 export default Guincho;

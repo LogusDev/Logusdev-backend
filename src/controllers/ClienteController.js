@@ -140,3 +140,26 @@ export const loginCliente = async (req, res) => {
         res.status(500).json({error: error.message})
     }
 }
+
+export const trocarSenha = async (req, res) => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        const cliente = await Cliente.findByPk(id);
+
+        if (!cliente) return res.status(404).json({error: "Cliente não encontrado"})
+
+        const bateSenha = await bcrypt.compare(currentPassword, cliente.senha);
+        if (!bateSenha) return res.status(401).json({ error: "Senha atual incorreta." });
+
+       const hash= await bcrypt.hash(newPassword, 10);
+       cliente.senha = hash;
+       await cliente.save();
+
+       res.json({ message: "Senha alterada com sucesso!" });
+
+    } catch (error) {
+        res.status(500).json({error: "Erro ao alterar senha."});
+    }
+};

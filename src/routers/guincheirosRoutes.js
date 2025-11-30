@@ -3,11 +3,12 @@ import { criarGuincheiro, atualizaGuincheiro, deletaGuincheiro, buscaGuincheiro,
 
 const router = express.Router();
 
+router.post('/login', loginGuincheiro);
 router.get('/', buscaGuincheiro);
 router.get('/:id', buscaGuincheiroPorId);
 router.post('/', criarGuincheiro);
 router.put('/:id', atualizaGuincheiro);
 router.delete('/:id', deletaGuincheiro);
-router.post('/login', loginGuincheiro);
+
 
 export default router

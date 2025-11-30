@@ -161,6 +161,38 @@ export const listarChamadosPorCliente = async (req, res) => {
   }
 };
 
+
+export const listarChamadosPorGuincheiro = async (req, res) => {
+  try {
+    const guincheiro_id = req.params.id;
+
+    const chamados = await Chamado.findAll({
+      where: { guincheiro_id },
+      order: [['requisitado_em', 'DESC']],
+      include: [
+        {
+          model: Cliente,
+          as: 'cliente',
+          attributes: ['id', 'nome', 'foto_url']
+        },
+        {
+          model: Veiculo,
+          as: 'veiculo',
+          attributes: ['marca', 'modelo', 'placa', 'ano_fabricacao', 'cor']
+        }
+      ]
+    });
+
+    res.status(200).json(chamados);
+
+  } catch (error) {
+    console.error("Erro ao listar chamados do guincheiro:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
 export const atualizarStatusChamado = async (req, res) => {
     try {
         const chamado = await Chamado.findByPk(req.params.id);
