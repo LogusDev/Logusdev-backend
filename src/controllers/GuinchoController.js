@@ -36,11 +36,10 @@ export const buscaGuinchosPorGuincheiro = async (req, res) => {
 // Criar guincho
 export const adicionarGuincho = async (req, res) => {
   try {
-    const { placa, marca, modelo, ano_fabricacao, capacidade, comprimento_plataforma, cor } = req.body;
-    const guincheiroId = req.userId || req.body.guincheiro_id; // pega do token ou do body
+    const { placa, marca, modelo, ano_fabricacao, capacidade, comprimento_plataforma, cor, guincheiro_id } = req.body;
 
-    if (!guincheiroId) {
-      return res.status(401).json({ error: "Usuário não autenticado" });
+    if (!guincheiro_id) {
+      return res.status(400).json({ error: "guincheiro_id é obrigatório no body da requisição" });
     }
 
     const novoGuincho = await Guincho.create({
@@ -51,7 +50,7 @@ export const adicionarGuincho = async (req, res) => {
       ano_fabricacao,
       capacidade,
       comprimento_plataforma,
-      guincheiro_id: guincheiroId
+      guincheiro_id: guincheiro_id
     });
 
     console.log('✅ [adicionarGuincho] Guincho criado com sucesso:', novoGuincho.toJSON());
@@ -68,7 +67,11 @@ export const adicionarGuincho = async (req, res) => {
 export const editarGuincho = async (req, res) => {
     try {
         const { id } = req.params;
-        const guincheiro_id = req.userId;
+        const { guincheiro_id } = req.body;
+
+        if (!guincheiro_id) {
+            return res.status(400).json({ error: "guincheiro_id é obrigatório no body da requisição" });
+        }
 
         const guincho = await Guincho.findByPk(id);
         if (!guincho) return res.status(404).json({ error: 'Guincho não encontrado' });
@@ -108,7 +111,11 @@ export const editarGuincho = async (req, res) => {
 export const deletarGuincho = async (req, res) => {
     try {
         const { id } = req.params;
-        const guincheiro_id = req.userId;
+        const { guincheiro_id } = req.body;
+
+        if (!guincheiro_id) {
+            return res.status(400).json({ error: "guincheiro_id é obrigatório no body da requisição" });
+        }
 
         const guincho = await Guincho.findByPk(id);
         if (!guincho) return res.status(404).json({ error: 'Guincho não encontrado' });
@@ -138,22 +145,34 @@ export const listaModelosGuincho = async (req, res) => {
 export const selecionarGuinchoAtual = async (req, res) => {
     try {
         const { guinchoId } = req.params;
-        const guincheiroId = req.userId; 
+        const { guincheiro_id } = req.body;
 
+        if (!guincheiro_id) {
+            return res.status(400).json({ error: "guincheiro_id é obrigatório no body da requisição" });
+        }
+
+        // Verificar se o guincho existe e pertence ao guincheiro
+        const guincho = await Guincho.findOne({
+            where: { id: guinchoId, guincheiro_id: guincheiro_id }
+        });
+
+        if (!guincho) {
+            return res.status(404).json({ error: "Guincho não encontrado ou não pertence a este guincheiro" });
+        }
+
+        // Desativar todos os guinchos do guincheiro
         await Guincho.update(
             { ativo: false },
-            { where: { guincheiro_id: guincheiroId } }
+            { where: { guincheiro_id: guincheiro_id } }
         );
 
-        await Guincho.update(
-            { ativo: true },
-            { where: { id: guinchoId, guincheiro_id: guincheiroId } }
-        );
+        // Ativar o guincho selecionado
+        await guincho.update({ ativo: true });
 
         return res.json({ message: "Guincho atual atualizado com sucesso!" });
 
     } catch (error) {
-        console.log(error);
+        console.error('Erro ao selecionar guincho atual:', error);
         return res.status(500).json({ error: "Erro ao atualizar guincho atual." });
     }
 };
