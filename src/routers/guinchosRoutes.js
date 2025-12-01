@@ -17,10 +17,10 @@ router.get('/modelos', listaModelosGuincho);
 router.get('/guincheiro/:id', buscaGuinchosPorGuincheiro);
 router.get('/', buscaGuincho);
 router.get('/:id', buscaGuinchoPorId);
-router.post('/', verifyJWT, adicionarGuincho);
-router.put('/:id', verifyJWT, editarGuincho);
+router.post('/', adicionarGuincho);
+router.put('/:id', editarGuincho);
 router.delete('/:id', deletarGuincho);
-router.put('/:guinchoId/selecionar', verifyJWT, selecionarGuinchoAtual);
+router.put('/:guinchoId/selecionar', selecionarGuinchoAtual);
 
 
 

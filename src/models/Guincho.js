@@ -53,7 +53,7 @@ const Guincho = sequelize.define("guincho", {
 
 Guincheiro.hasMany(Guincho, {
     foreignKey: 'guincheiro_id',
-    as: 'guinchos'
+    as: 'guincho'
 });
 
 Guincho.belongsTo(Guincheiro, {
