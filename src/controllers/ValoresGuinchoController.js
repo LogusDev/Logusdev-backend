@@ -59,6 +59,8 @@ export const atualizarValoresGuincho = async (req, res) => {
         if (!valor) {
             return res.status(404).json({ error: 'Valor não encontrado' });
         }
+
+        console.log(valorSaida, valorKm);
         
         await valor.update({ valorSaida, valorKm });
         return res.status(200).json(valor);

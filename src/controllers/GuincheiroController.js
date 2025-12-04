@@ -116,3 +116,27 @@ export const loginGuincheiro = async (req, res) => {
     }
 };
 
+export const trocarSenhaGuincheiro = async (req, res) => {
+  const { id } = req.params;
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const guincheiro = await Guincheiro.findByPk(id);
+    if (!guincheiro)
+      return res.status(404).json({ error: "Guincheiro não encontrado" });
+
+    const bateSenha = await bcrypt.compare(currentPassword, guincheiro.senha);
+    if (!bateSenha)
+      return res.status(401).json({ error: "Senha atual incorreta." });
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    guincheiro.senha = hash;
+    await guincheiro.save();
+
+    res.json({ message: "Senha alterada com sucesso!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao alterar senha." });
+  }
+};
+

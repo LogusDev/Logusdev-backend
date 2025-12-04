@@ -1,5 +1,5 @@
 import express from 'express';
-import { criarGuincheiro, atualizaGuincheiro, deletaGuincheiro, buscaGuincheiro, buscaGuincheiroPorId, loginGuincheiro } from "../controllers/GuincheiroController.js";
+import { criarGuincheiro, atualizaGuincheiro, deletaGuincheiro, buscaGuincheiro, buscaGuincheiroPorId, loginGuincheiro, trocarSenhaGuincheiro } from "../controllers/GuincheiroController.js";
 import { uploadFotoGuincheiro } from '../controllers/uploadController.js';
 import upload from '../middlewares/upload.js';
 
@@ -12,5 +12,6 @@ router.post('/', criarGuincheiro);
 router.put('/:id', atualizaGuincheiro);
 router.delete('/:id', deletaGuincheiro);
 router.post('/:email/upload-foto', upload.single('foto'), uploadFotoGuincheiro);
+router.put("/update-password/:id", trocarSenhaGuincheiro);
 
 export default router

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import verifyJWT from '../middlewares/authMiddleware.js';
 import {
   buscaGuincho,
   buscaGuinchoPorId,
@@ -9,7 +10,7 @@ import {
   listaModelosGuincho,
   selecionarGuinchoAtual
 } from '../controllers/GuinchoController.js';
-import verifyJWT from '../middlewares/authMiddleware.js';
+
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.get('/:id', buscaGuinchoPorId);
 router.post('/', adicionarGuincho);
 router.put('/:id', editarGuincho);
 router.delete('/:id', deletarGuincho);
-router.put('/:guinchoId/selecionar', selecionarGuinchoAtual);
+router.put('/:guinchoId/selecionar', verifyJWT, selecionarGuinchoAtual);
 
 
 
