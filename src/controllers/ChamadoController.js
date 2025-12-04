@@ -690,7 +690,7 @@ export const listarGuincheirosDisponiveis = async (req, res) => {
         {
           model: Guincho,
           as: 'guincho',
-          attributes: ['id', 'placa', 'marca', 'modelo', 'ano_fabricacao', 'capacidade', 'comprimento_plataforma'],
+          attributes: ['id', 'placa', 'marca', 'modelo', 'ano_fabricacao', 'capacidade', 'comprimento_plataforma', 'ativo'],
           required: true 
         },
         {
@@ -731,20 +731,30 @@ export const listarGuincheirosDisponiveis = async (req, res) => {
     }
 
     const guincheirosComValores = guincheiros
-      .filter(g => g.guincho && g.valoresGuincho && g.valoresGuincho.length > 0)
+      .filter(g => g.guincho && Array.isArray(g.guincho) && g.guincho.length > 0 && g.valoresGuincho && g.valoresGuincho.length > 0)
       .map(g => {
         const valoresOrdenados = [...g.valoresGuincho].sort((a, b) => 
           new Date(b.dataRegistro) - new Date(a.dataRegistro)
         );
+        // Seleciona o guincho ativo ou o primeiro disponível
+        const guinchoAtivo = g.guincho.find(guincho => guincho.ativo) || g.guincho[0];
+        
         return {
           ...g.toJSON(),
-          valoresGuincho: [valoresOrdenados[0]] 
+          valoresGuincho: [valoresOrdenados[0]],
+          guincho: guinchoAtivo
         };
       });
 
     const resultado = await Promise.all(
       guincheirosComValores.map(async (guincheiro) => {
         const valorAtual = guincheiro.valoresGuincho[0];
+        const guinchoSelecionado = guincheiro.guincho;
+
+        if (!guinchoSelecionado) {
+          console.warn(`⚠️ Guincheiro ${guincheiro.id} não tem guincho válido`);
+          return null;
+        }
 
         const distanciaTotalKm = calcularDistancia(
           chamado.latitude_inicial,
@@ -777,20 +787,21 @@ export const listarGuincheirosDisponiveis = async (req, res) => {
           precoAproximado: parseFloat(precoAproximado.toFixed(2)),
           distanciaKm: parseFloat(distanciaTotalKm.toFixed(2)),
           guincho: {
-            modelo: guincheiro.guincho.modelo,
-            marca: guincheiro.guincho.marca,
-            ano: guincheiro.guincho.ano_fabricacao,
-            capacidade: parseFloat(guincheiro.guincho.capacidade),
-            comprimento: parseFloat(guincheiro.guincho.comprimento_plataforma),
-            placa: guincheiro.guincho.placa
+            modelo: guinchoSelecionado.modelo,
+            marca: guinchoSelecionado.marca,
+            ano: guinchoSelecionado.ano_fabricacao,
+            capacidade: parseFloat(guinchoSelecionado.capacidade || 0),
+            comprimento: parseFloat(guinchoSelecionado.comprimento_plataforma || 0),
+            placa: guinchoSelecionado.placa
           }
         };
       })
     );
 
-    resultado.sort((a, b) => a.precoAproximado - b.precoAproximado);
+    const resultadoFiltrado = resultado.filter(r => r !== null);
+    resultadoFiltrado.sort((a, b) => a.precoAproximado - b.precoAproximado);
 
-    res.status(200).json(resultado);
+    res.status(200).json(resultadoFiltrado);
   } catch (error) {
     console.error("Erro ao listar guincheiros disponíveis:", error);
     res.status(500).json({ error: error.message });
